@@ -1,5 +1,5 @@
-// AW139 Checklist — Service Worker
-// Repositorio: https://github.com/diegosacristan/aw139_CheckList
+// AW139 Checklist - Service Worker
+// Repositorio: https://github.com/diegosacristan/aw139-QRH
 
 const CACHE_NAME = 'aw139-qrh-v2';
 const ASSETS = [
@@ -8,7 +8,7 @@ const ASSETS = [
   './manifest.json'
 ];
 
-// INSTALL — guardar en caché
+// INSTALL - guardar en cache
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -17,7 +17,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// ACTIVATE — limpiar cachés viejas
+// ACTIVATE - limpiar caches viejas
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -30,28 +30,39 @@ self.addEventListener('activate', event => {
   );
 });
 
-// FETCH — servir desde caché, fallback a red
+// FETCH - network-first para HTML, cache-first para lo demas
 self.addEventListener('fetch', event => {
+  const req = event.request;
+
+  // HTML: network-first para reflejar cambios durante desarrollo
+  if (req.mode === 'navigate' || req.destination === 'document') {
+    event.respondWith(
+      fetch(req)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', clone));
+          return response;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
+    caches.match(req)
       .then(cached => {
         if (cached) return cached;
-        return fetch(event.request)
+        return fetch(req)
           .then(response => {
-            // Cachear fuentes de Google dinámicamente
-            if (event.request.url.includes('fonts.googleapis') ||
-                event.request.url.includes('fonts.gstatic')) {
+            // Cachear fuentes de Google dinamicamente
+            if (req.url.includes('fonts.googleapis') ||
+                req.url.includes('fonts.gstatic')) {
               const clone = response.clone();
-              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+              caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
             }
             return response;
           })
-          .catch(() => {
-            // Offline fallback
-            if (event.request.destination === 'document') {
-              return caches.match('./index.html');
-            }
-          });
+          .catch(() => undefined);
       })
   );
 });
