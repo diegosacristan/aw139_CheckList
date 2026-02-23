@@ -90,6 +90,39 @@
     overflow: hidden;
   }
 
+  .update-banner {
+    position: fixed;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom) + 16px);
+    transform: translateX(-50%);
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #0f1522;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+    z-index: 10000;
+    font-size: 12px;
+    letter-spacing: 0.4px;
+  }
+  .update-banner.show { display: inline-flex; }
+  .update-banner button {
+    background: var(--gold);
+    color: #1a1a1a;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .update-banner button:hover { filter: brightness(1.05); }
+  .update-banner button:active { transform: translateY(1px); }
+  @media (max-width: 520px) {
+    .update-banner { width: calc(100% - 24px); justify-content: space-between; }
+  }
+
   /* ── SIDEBAR ── */
   #sidebar {
     width: 120px;
@@ -1404,6 +1437,12 @@
   </div><!-- /content -->
 </div><!-- /main -->
 
+  <!-- Update banner -->
+  <div id="update-banner" class="update-banner" role="status" aria-live="polite">
+    <span>Hay una nueva versión disponible.</span>
+    <button id="update-btn" type="button">Actualizar</button>
+  </div>
+
 <script>
 const labels = {
   cockpit: 'COCKPIT SAFETY / PRE-START',
@@ -2465,12 +2504,52 @@ window.addEventListener('load', () => {
 // Init progress
 Object.keys(labels).forEach(id => updateProgress(id));
 
+// Update banner control
+const updateBanner = document.getElementById('update-banner');
+const updateBtn = document.getElementById('update-btn');
+let pendingSW = null;
+
+function showUpdateBanner() {
+  if (updateBanner) updateBanner.classList.add('show');
+}
+
+if (updateBtn) {
+  updateBtn.addEventListener('click', () => {
+    if (pendingSW) {
+      pendingSW.postMessage({ type: 'SKIP_WAITING' });
+    }
+  });
+}
+
 // ═══ SERVICE WORKER REGISTRATION ═══
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('AW139 SW registered:', reg.scope))
+      .then(reg => {
+        if (reg.waiting) {
+          pendingSW = reg.waiting;
+          showUpdateBanner();
+        }
+
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          if (!newSW) return;
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              pendingSW = newSW;
+              showUpdateBanner();
+            }
+          });
+        });
+      })
       .catch(err => console.warn('AW139 SW registration failed:', err));
+
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
   });
 }
 </script>
