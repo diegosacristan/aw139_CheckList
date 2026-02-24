@@ -1,7 +1,7 @@
 // AW139 Checklist — Service Worker
 // Repositorio: https://github.com/diegosacristan/aw139_CheckList
 
-const CACHE_NAME = 'aw139-qrh-v9';
+const CACHE_NAME = 'aw139-qrh-v10';
 const ASSETS = [
   './',
   './index.html',
