@@ -84,6 +84,10 @@
     --accent: #4a6abf;
     --white: #ffffff;
     --title: #c8dd40;
+    --update-bg: #0f1522;
+    --update-text: #d8dde8;
+    --update-border: #24304a;
+    --update-btn-text: #0a0d14;
   }
 
   /* --- PALETA DIURNA --- */
@@ -98,11 +102,15 @@
     --text: #0a0e1a;
     --dim: #3a4460;
     --header-bg: #bcc4d8;
-    --row-alt: #cdd2e0;
-    --row-hover: #b8c0d4;
+    --row-alt: #b1b8ca;
+    --row-hover: #a8b2c8;
     --accent: #1a40a0;
     --white: #0a0e1a;
     --title: #1a4a00;
+    --update-bg: #eef1f7;
+    --update-text: #1a2336;
+    --update-border: #7d8fb3;
+    --update-btn-text: #0a0d14;
   }
 
   /* Ajustes día para colores hardcoded */
@@ -112,10 +120,12 @@
   :root[data-mode="day"] .nav-btn.amber.active { background: #f0c860 !important; color: #3a1800 !important; }
   :root[data-mode="day"] .nav-btn.red.active   { background: #f0a0a0 !important; color: #3a0000 !important; }
   :root[data-mode="day"] .row-repeat           { background: linear-gradient(90deg,#f8e090,#ffe8a0,#f8e090) !important; }
-  :root[data-mode="day"] .row-repeat td        { color: #6a3800 !important; }
+  :root[data-mode="day"] .row-repeat td        { color: #92540e !important; }
   :root[data-mode="day"] .banner.note          { background: #c8d8f0 !important; color: #1a3080 !important; border-color: #6090d0 !important; }
   :root[data-mode="day"] .row-note td          { color: #3a4460 !important; background: #ccd4e4 !important; }
   :root[data-mode="day"] .info-block           { background: #c8d4ec !important; border-color: #3a60b0 !important; }
+  :root[data-mode="day"] .cl-table tr:nth-child(odd) { background: #dfe4f1; }
+  :root[data-mode="day"] .info-link            { color: #1a3d00 !important; }
   /* -------------------------------------------------------
      PALETA NVG – MIL-STD-3009 Clase A compatible
      Principio: Canal R=0 en todos los colores base.
@@ -147,6 +157,10 @@
 
     /* WARNING: verde intenso + pulso. Rojo PROHIBIDO con NVG */
     --red:    #00CC22;      /* Reemplaza rojo ? verde brillante pulsante */
+    --update-bg: #000810;
+    --update-text: #00AA44;
+    --update-border: #003388;
+    --update-btn-text: #001200;
   }
 
   /* Overrides hardcoded para NVG – R=0 absoluto */
@@ -171,6 +185,7 @@
   :root[data-mode="nvg"] .banner.note          { background: #000C18 !important; color: #0077CC !important; border-color: #003388 !important; }
   :root[data-mode="nvg"] .row-note td          { color: #005522 !important; background: #000810 !important; }
   :root[data-mode="nvg"] .info-block           { background: #000810 !important; border-color: #003388 !important; color: #005599 !important; }
+  :root[data-mode="nvg"] .info-link            { color: #0077CC !important; }
   :root[data-mode="nvg"] .cl-table tr.checked .item-name { color: #003318 !important; }
   :root[data-mode="nvg"] .cl-table tr.checked .check-box { background: #005522 !important; border-color: #008833 !important; }
   :root[data-mode="nvg"] .ff-row               { border-left-color: #00AA22 !important; background: #001200 !important; }
@@ -239,8 +254,9 @@
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
-    background: #0f1522;
-    border: 1px solid var(--accent);
+    background: var(--update-bg);
+    color: var(--update-text);
+    border: 1px solid var(--update-border);
     border-radius: 10px;
     box-shadow: 0 10px 24px rgba(0,0,0,0.35);
     z-index: 10000;
@@ -250,7 +266,7 @@
   .update-banner.show { display: inline-flex; }
   .update-banner button {
     background: var(--gold);
-    color: #1a1a1a;
+    color: var(--update-btn-text);
     border: none;
     padding: 6px 10px;
     border-radius: 8px;
@@ -832,6 +848,10 @@
     line-height: 1.6;
     letter-spacing: 0.3px;
   }
+  .info-link {
+    color: #b8d44a;
+    letter-spacing: 1px;
+  }
 
   /* pilot header row */
   .pilot-header {
@@ -1025,7 +1045,7 @@
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num">10</td><td class="item-name">NR / NF</td><td class="item-action">65% ± 1%</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num">11</td><td class="item-name">ENG 1(2) MODE Switch</td><td class="item-action">FLIGHT</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num">12</td><td class="item-name">GEN 1(2)</td><td class="item-action">ON LINE / Check load</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="row-repeat"><td colspan="4">REPEAT ITEMS 5 TO 12 FOR 2nd ENGINE</td></tr>
+          <tr class="row-repeat" onclick="repeatReset(this, 'start', 5, 12)"><td colspan="4">REPEAT ITEMS 5 TO 12 FOR 2nd ENGINE</td></tr>
           <tr onclick="toggle(this)"><td class="item-num">13</td><td class="item-name">NR / NF</td><td class="item-action">100%</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">14</td><td class="item-name">External Power</td><td class="item-action">OFF / Disconnect</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">15</td><td class="item-name">GEN 1 &amp; 2</td><td class="item-action">Confirm ON LINE</td><td class="check-col"><div class="check-box"></div></td></tr>
@@ -1315,8 +1335,8 @@
           <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">7</td><td class="item-name">ENG MODE Switch</td><td class="item-action">FLIGHT (at 65% ± 1%)</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">8</td><td class="item-name">GEN</td><td class= "item-action">ON LINE / CHECK LOAD</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">9</td><td class="item-name">Bus Tie</td><td class="item-action">AUTO</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="row-repeat"><td colspan="4">REPEAT ITEMS 2 TO 9 FOR 2nd ENGINE</td></tr>
-          <tr class="info-block" onclick="show('syschecks')" style="cursor:pointer;"><td colspan="3" style="text-align: center;"><strong style="color:#b8d44a;">GO TO SYS CHECKS MENU</strong></td></tr>
+          <tr class="row-repeat" onclick="repeatReset(this, 'subsequent', 2, 9)"><td colspan="4">REPEAT ITEMS 2 TO 9 FOR 2nd ENGINE</td></tr>
+          <tr class="info-block" onclick="show('syschecks')" style="cursor:pointer;"><td colspan="3" style="text-align: center;"><strong class="info-link">GO TO SYS CHECKS MENU</strong></td></tr>
         </table>
       </div>
     </div>
@@ -1734,6 +1754,20 @@ function updateProgressForSection(id) {
 function resetSection(id) {
   const panel = document.getElementById('panel-' + id);
   panel.querySelectorAll('tr.checked').forEach(r => r.classList.remove('checked'));
+  updateProgress(id);
+}
+
+function repeatReset(row, id, from, to) {
+  const table = row.closest('table');
+  if (!table) return;
+  table.querySelectorAll('tr[onclick]').forEach(r => {
+    const numEl = r.querySelector('.item-num');
+    if (!numEl) return;
+    const num = parseInt(numEl.textContent, 10);
+    if (!Number.isNaN(num) && num >= from && num <= to) {
+      r.classList.remove('checked');
+    }
+  });
   updateProgress(id);
 }
 
