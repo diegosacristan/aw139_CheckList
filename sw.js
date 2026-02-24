@@ -1,11 +1,14 @@
 // AW139 Checklist — Service Worker
 // Repositorio: https://github.com/diegosacristan/aw139_CheckList
 
-const CACHE_NAME = 'aw139-qrh-v4';
+const CACHE_NAME = 'aw139-qrh-v5';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png',
   './imagen.jpeg'
 ];
 
@@ -62,5 +65,3 @@ self.addEventListener('message', event => {
     self.skipWaiting();
   }
 });
-
-

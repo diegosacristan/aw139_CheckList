@@ -2,8 +2,9 @@
   "name": "AW139 QRH — FAC 0008",
   "short_name": "ÁGUILA-1",
   "description": "AW139 Abbreviated Checklist — Escuadrón Águila Uno FAC 0008",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/aw139_CheckList/index.html",
+  "scope": "/aw139_CheckList/",
+  "id": "/aw139_CheckList/",
   "display": "standalone",
   "orientation": "landscape",
   "background_color": "#0a0d14",
@@ -15,10 +16,22 @@
   ],
   "icons": [
     {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "imagen.jpeg",
       "sizes": "1024x1024",
       "type": "image/jpeg",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
