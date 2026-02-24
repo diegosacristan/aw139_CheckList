@@ -6,10 +6,29 @@ const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './favicon.ico',
+  './favicon-16x16.png',
+  './favicon-32x32.png',
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
-  './imagen.jpeg'
+  './imagen.jpeg',
+  './splash-640x1136.png',
+  './splash-750x1334.png',
+  './splash-1125x2436.png',
+  './splash-1242x2208.png',
+  './splash-1536x2048.png',
+  './splash-1668x2224.png',
+  './splash-1668x2388.png',
+  './splash-2048x2732.png',
+  './splash-1136x640.png',
+  './splash-1334x750.png',
+  './splash-2436x1125.png',
+  './splash-2208x1242.png',
+  './splash-2048x1536.png',
+  './splash-2224x1668.png',
+  './splash-2388x1668.png',
+  './splash-2732x2048.png'
 ];
 
 // INSTALL — guardar en caché
