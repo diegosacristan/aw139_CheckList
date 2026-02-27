@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AW139 Power Assurance Check (Digital)</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<header>
+  <h1>AW139 • Power Assurance Check — Carta digital</h1>
+  <small id="statusText">Sin calibración: entra a “Calibración” y define paneles/ejes/líneas.</small>
+</header>
+
+<main>
+  <aside id="sidebar">
+    <div class="card">
+      <h2>1) Inputs</h2>
+      <div class="row"><label>Motor</label>
+        <select id="engine">
+          <option value="1">Motor 1</option>
+          <option value="2">Motor 2</option>
+        </select>
+      </div>
+      <div class="row"><label>Torque indicado (%TQ)</label><input id="tq" type="number" step="0.1" value="100"/></div>
+      <div class="row"><label>ITT indicado (°C)</label><input id="itt" type="number" step="1" value="780"/></div>
+      <div class="row"><label>NG indicado (%)</label><input id="ng" type="number" step="0.1" value="101.0"/></div>
+      <div class="row"><label>OAT (°C)</label><input id="oat" type="number" step="1" value="10"/></div>
+      <div class="row"><label>Altitud presión (ft)</label><input id="alt" type="number" step="10" value="7000"/></div>
+      <div class="row" style="gap:10px;justify-content:space-between">
+        <button id="btnCompute">Calcular y graficar</button>
+        <button id="btnResetView" class="secondary">Reset vista</button>
+      </div>
+      <small>Tip: zoom con rueda, arrastra con mouse (o 1 dedo). <kbd>Shift</kbd> + click para capturar puntos en calibración.</small>
+    </div>
+
+    <div class="card">
+      <h2>2) Resultados</h2>
+      <div id="results">
+        <small>Calcula para ver máximos y estado.</small>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2.1) Lecturas PAC</h2>
+      <div class="row"><label>Nombre lectura</label><input id="readingName" type="text" placeholder="Ej: ENG1_2026-02-26"/></div>
+      <div class="row" style="gap:10px;justify-content:space-between">
+        <button id="btnSaveReading" class="secondary">Guardar lectura</button>
+      </div>
+      <div class="row"><label>Lecturas guardadas</label>
+        <select id="readingSelect"></select>
+      </div>
+      <div class="row" style="gap:10px;justify-content:space-between">
+        <button id="btnLoadReading" class="secondary">Cargar</button>
+        <button id="btnDeleteReading" class="danger">Borrar</button>
+      </div>
+      <small id="readingsInfo">Sin lecturas guardadas.</small>
+    </div>
+
+    <div class="card">
+      <h2>3) Admin / Calibración</h2>
+      <div class="row"><label>Modo admin</label>
+        <button id="btnAdminToggle" class="secondary">Activar</button>
+      </div>
+      <div class="row"><label>Clave admin (opcional)</label>
+        <input id="adminKey" type="password" placeholder="Deja vacío si no usas clave"/>
+      </div>
+      <div class="row" style="gap:10px;justify-content:space-between">
+        <button id="btnSetAdminKey" class="secondary">Guardar clave</button>
+        <button id="btnClearAdminKey" class="secondary">Borrar clave</button>
+      </div>
+      <div class="row" style="gap:10px;justify-content:space-between">
+        <button id="btnResetAdminKey" class="secondary">Reset clave (olvidada)</button>
+      </div>
+      <div id="calPanel" style="display:none">
+        <hr/>
+      <div class="row" style="gap:10px;justify-content:space-between">
+        <button id="btnClearCal" class="danger">Borrar config</button>
+      </div>
+      <div class="row"><label>Modo captura</label>
+        <button id="btnCaptureToggle" class="secondary">Desactivado</button>
+      </div>
+        <hr/>
+        <div class="row"><label>Paso</label><select id="calStep"></select></div>
+        <div class="row"><label>Valor (para líneas)</label><input id="calValue" type="number" step="1" placeholder="Ej: 7000 o 10"/></div>
+        <div class="row" style="gap:10px;justify-content:space-between">
+          <button id="btnNext" class="secondary">Siguiente</button>
+          <button id="btnUndo" class="secondary">Deshacer</button>
+        </div>
+        <div class="row" style="gap:10px;justify-content:space-between">
+          <button id="btnSaveLine" class="secondary">Guardar línea</button>
+        </div>
+        <small id="lineStatus"></small>
+        <small id="calHelp"></small>
+        <small>Tip: con Modo captura desactivado, haz clic en puntos/líneas guardadas para editar su valor.</small>
+        <hr/>
+        <div class="row" style="gap:10px;justify-content:space-between">
+          <button id="btnExport" class="secondary">Exportar JSON</button>
+          <label class="secondary" style="padding:10px 12px;border-radius:12px;cursor:pointer;border:1px solid #243447">
+            Importar JSON<input id="fileImport" type="file" accept="application/json" style="display:none"/>
+          </label>
+        </div>
+        <small>Recomendación: calibra con zoom alto para precisión.</small>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Notas operacionales</h2>
+      <small>
+        Esta herramienta replica la lectura del nomograma: TQ → intersecta ALT → transfiere → intersecta OAT → lee máximo (ITT/NG).
+        Si el punto queda fuera del rango del chart, la app marcará “no concluyente”.
+      </small>
+    </div>
+  </aside>
+
+  <section id="canvasWrap">
+    <canvas id="chartCanvas"></canvas>
+    <div id="hud">
+      <div><b>Ayuda</b></div>
+      <div id="hudText" style="margin-top:6px;color:#c9d6e7">
+        Carga la carta (ya incluida) y calibra para habilitar cálculos.
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  window.CHART_IMAGE = "power_assurance_chart.png";
+</script>
+<script src="aw139_pac_chart_config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

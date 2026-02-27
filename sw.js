@@ -1,7 +1,7 @@
 // AW139 Checklist — Service Worker
 // Repositorio: https://github.com/diegosacristan/aw139_CheckList
 
-const CACHE_NAME = 'aw139-qrh-v10';
+const CACHE_NAME = 'aw139-qrh-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -12,7 +12,14 @@ const ASSETS = [
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
-  './imagen.jpeg'
+  './imagen.jpeg',
+  './instalacion_qr_v2.html',
+  // Módulo PAC
+  './pac/index.html',
+  './pac/app.js',
+  './pac/styles.css',
+  './pac/aw139_pac_chart_config.js',
+  './pac/power_assurance_chart.png'
 ];
 
 // INSTALL — guardar en caché

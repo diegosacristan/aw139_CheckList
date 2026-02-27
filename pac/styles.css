@@ -1,0 +1,40 @@
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#0b0f14;color:#e8eef6}
+header{padding:12px 16px;background:#101824;border-bottom:1px solid #1f2b3a;display:flex;gap:12px;align-items:center}
+header h1{font-size:16px;margin:0;font-weight:650}
+main{display:grid;grid-template-columns:360px 1fr;height:calc(100vh - 49px)}
+#sidebar{border-right:1px solid #1f2b3a;padding:14px;overflow:auto}
+.card{background:#101824;border:1px solid #1f2b3a;border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:0 8px 22px rgba(0,0,0,.25)}
+.card h2{font-size:13px;margin:0 0 8px 0;color:#cfe0ff}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0}
+.row label{flex:1;font-size:12px;color:#b9c7d8}
+.row input,.row select{flex:1;background:#0b0f14;border:1px solid #243447;color:#e8eef6;border-radius:10px;padding:8px;font-size:12px}
+button{background:#2b7cff;border:none;color:white;border-radius:12px;padding:10px 12px;font-weight:650;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}
+button.secondary{background:#1a2533;color:#e8eef6;border:1px solid #243447}
+button.danger{background:#ff4d4d}
+small{color:#9fb0c4}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.ok{background:rgba(46,204,113,.15);color:#9dffbf;border:1px solid rgba(46,204,113,.35)}
+.bad{background:rgba(231,76,60,.15);color:#ffb3ad;border:1px solid rgba(231,76,60,.35)}
+.warn{background:rgba(241,196,15,.15);color:#ffe7a0;border:1px solid rgba(241,196,15,.35)}
+#canvasWrap{position:relative;overflow:hidden}
+#chartCanvas{display:block;width:100%;height:100%;background:#0b0f14}
+#hud{position:absolute;left:12px;top:12px;background:rgba(16,24,36,.88);border:1px solid #1f2b3a;border-radius:12px;padding:10px;max-width:520px}
+#hud b{color:#e8eef6}
+kbd{background:#0b0f14;border:1px solid #243447;border-bottom-width:2px;border-radius:8px;padding:2px 6px;font-size:11px}
+hr{border:none;border-top:1px solid #1f2b3a;margin:10px 0}
+.metric-card{border:1px solid #243447;border-radius:10px;padding:8px;margin:8px 0;background:#0b1320}
+.metric-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.metric-title{font-size:12px;color:#cfe0ff;font-weight:650}
+.metric-values{font-size:12px;color:#9fb0c4}
+.metric-status{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.metric-status.good{background:rgba(46,204,113,.2);color:#9dffbf;border:1px solid rgba(46,204,113,.45)}
+.metric-status.near{background:rgba(241,196,15,.2);color:#ffe7a0;border:1px solid rgba(241,196,15,.45)}
+.metric-status.bad{background:rgba(231,76,60,.2);color:#ffb3ad;border:1px solid rgba(231,76,60,.45)}
+.limit-track{position:relative;height:10px;border-radius:999px;background:#1a2533;border:1px solid #243447;overflow:hidden}
+.limit-fill{height:100%}
+.limit-fill.good{background:linear-gradient(90deg,#1f8a44,#2ecc71)}
+.limit-fill.near{background:linear-gradient(90deg,#c37f00,#f1c40f)}
+.limit-fill.bad{background:linear-gradient(90deg,#a62e21,#e74c3c)}
+.limit-marker{position:absolute;top:-2px;width:2px;height:14px;background:#d9e2f2;opacity:.95}
+#readingSelect{width:100%;max-width:100%}
