@@ -8,6 +8,7 @@
   const CHART_IMAGE_SRC = qs.get('chart') || window.CHART_IMAGE || 'power_assurance_chart.png';
   const DEFAULT_CONFIG_VAR = qs.get('configVar') || 'AW139_PAC_DEFAULT_CONFIG';
   const CONFIG_JSON_URL = qs.get('config') || '';
+  const LEGACY_COORD_SCALE = 0.79;
 
   const canvas = document.getElementById('chartCanvas');
   const ctx = canvas.getContext('2d');
@@ -79,10 +80,48 @@
   let calClicks = []; // raw image coords clicks for current step
   const steps = buildSteps(); // list of {id, title, help, kind}
   const lineFamilyMeta = {
-    altitude: { label: 'ALT', unit: 'ft', color: 'rgba(93,181,255,0.95)' },
-    oat_itt: { label: 'OAT ITT', unit: 'C', color: 'rgba(255,187,88,0.95)' },
-    oat_ng: { label: 'OAT NG', unit: 'C', color: 'rgba(127,224,145,0.95)' },
+    altitude: { label: 'ALT', unit: 'ft', colorVar: '--pac-line-altitude', fallback: 'rgba(122,176,255,0.95)' },
+    oat_itt: { label: 'OAT ITT', unit: 'C', colorVar: '--pac-line-oat-itt', fallback: 'rgba(255,185,64,0.95)' },
+    oat_ng: { label: 'OAT NG', unit: 'C', colorVar: '--pac-line-oat-ng', fallback: 'rgba(74,223,112,0.95)' },
   };
+
+  const MODES = { NIGHT: 'night', DAY: 'day', NVG: 'nvg' };
+
+  function normalizeMode(mode) {
+    if (mode === MODES.DAY || mode === MODES.NVG || mode === MODES.NIGHT) return mode;
+    if (mode === 'day' || mode === 'nvg' || mode === 'night') return mode;
+    return MODES.NIGHT;
+  }
+
+  function applyMode(mode) {
+    const next = normalizeMode(mode);
+    const root = document.documentElement;
+    root.removeAttribute('data-mode');
+    if (next === MODES.DAY) root.setAttribute('data-mode', 'day');
+    if (next === MODES.NVG) root.setAttribute('data-mode', 'nvg');
+    draw();
+  }
+
+  function syncModeFromHost() {
+    let mode = null;
+    try {
+      mode = window.parent?.localStorage?.getItem('aw139-mode');
+    } catch (err) {
+      mode = null;
+    }
+    if (!mode) {
+      try {
+        const hostMode = window.parent?.document?.documentElement?.getAttribute('data-mode');
+        mode = hostMode === 'day' || hostMode === 'nvg' ? hostMode : MODES.NIGHT;
+      } catch (err) {
+        mode = null;
+      }
+    }
+    if (!mode) {
+      mode = localStorage.getItem('aw139-mode') || MODES.NIGHT;
+    }
+    applyMode(mode);
+  }
 
   // ---------- helpers ----------
   function emptyConfig() {
@@ -124,7 +163,6 @@
 
     const fixLine = (line) => {
       if (!line || !line.p1 || !line.p2) return line;
-      if (Number.isFinite(line.m)) return line;
       const x1 = line.p1[0], y1 = line.p1[1];
       const x2 = line.p2[0], y2 = line.p2[1];
       const dx = x2 - x1;
@@ -139,6 +177,7 @@
     const normalized = {
       version: cfg.version || base.version,
       image: cfg.image || base.image,
+      meta: cfg.meta || {},
       panels: {
         p1: { ...base.panels.p1, ...(safePanels.p1 || {}) },
         itt: { ...base.panels.itt, ...(safePanels.itt || {}) },
@@ -161,6 +200,82 @@
     };
 
     return normalized;
+  }
+
+  function scalePoint(pt, scale) {
+    if (!pt || pt.length < 2) return pt;
+    return [pt[0] * scale, pt[1] * scale];
+  }
+
+  function scaleLine(line, scale) {
+    if (!line) return line;
+    const points = Array.isArray(line.points) ? line.points.map((pt) => scalePoint(pt, scale)) : null;
+    return {
+      ...line,
+      p1: scalePoint(line.p1, scale),
+      p2: scalePoint(line.p2, scale),
+      points,
+      m: undefined,
+      b: undefined,
+      x_const: undefined,
+    };
+  }
+
+  function scaleConfigCoords(cfg, scale) {
+    if (!cfg || !Number.isFinite(scale) || scale <= 0) return cfg;
+    const p1 = cfg?.panels?.p1?.bbox || null;
+    const itt = cfg?.panels?.itt?.bbox || null;
+    const ng = cfg?.panels?.ng?.bbox || null;
+    return {
+      ...cfg,
+      panels: {
+        ...cfg.panels,
+        p1: { ...(cfg.panels?.p1 || {}), bbox: p1 ? p1.map((v) => v * scale) : p1 },
+        itt: { ...(cfg.panels?.itt || {}), bbox: itt ? itt.map((v) => v * scale) : itt },
+        ng: { ...(cfg.panels?.ng || {}), bbox: ng ? ng.map((v) => v * scale) : ng },
+      },
+      axes: {
+        ...cfg.axes,
+        p1_x: cfg.axes?.p1_x ? { ...cfg.axes.p1_x, p1: scalePoint(cfg.axes.p1_x.p1, scale), p2: scalePoint(cfg.axes.p1_x.p2, scale) } : cfg.axes?.p1_x,
+        itt_x: cfg.axes?.itt_x ? { ...cfg.axes.itt_x, p1: scalePoint(cfg.axes.itt_x.p1, scale), p2: scalePoint(cfg.axes.itt_x.p2, scale) } : cfg.axes?.itt_x,
+        ng_x: cfg.axes?.ng_x ? { ...cfg.axes.ng_x, p1: scalePoint(cfg.axes.ng_x.p1, scale), p2: scalePoint(cfg.axes.ng_x.p2, scale) } : cfg.axes?.ng_x,
+      },
+      lines: {
+        ...cfg.lines,
+        altitude: (cfg.lines?.altitude || []).map((line) => scaleLine(line, scale)),
+        oat_itt: (cfg.lines?.oat_itt || []).map((line) => scaleLine(line, scale)),
+        oat_ng: (cfg.lines?.oat_ng || []).map((line) => scaleLine(line, scale)),
+      },
+    };
+  }
+
+  function maybeAutoScaleLegacyConfigToImage() {
+    if (!img?.complete || !config) return false;
+    if (config?.meta?.legacyScaledForImage) return false;
+    const p1 = config?.panels?.p1?.bbox;
+    const ng = config?.panels?.ng?.bbox;
+    if (!p1 || !ng) return false;
+
+    const looksLegacy =
+      (ng[2] > img.width * 1.03) &&
+      (p1[1] > img.height * 0.5);
+
+    if (!looksLegacy) return false;
+
+    const scaledRaw = scaleConfigCoords(config, LEGACY_COORD_SCALE);
+    const normalizedScaled = normalizeConfig({
+      ...scaledRaw,
+      meta: {
+        ...(scaledRaw.meta || {}),
+        legacyScaledForImage: `${img.width}x${img.height}`,
+        legacyScaleFactor: LEGACY_COORD_SCALE,
+      },
+    });
+    if (!normalizedScaled) return false;
+
+    config = normalizedScaled;
+    saveConfig();
+    return true;
   }
 
   function loadConfig() {
@@ -310,6 +425,15 @@
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
+  function cssVar(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+
+  function canvasFont(px, weight = 600) {
+    return `${weight} ${px}px "Share Tech Mono", monospace`;
+  }
+
   function axisKey(panelKey) {
     if (panelKey === 'p1') return 'p1_x';
     if (panelKey === 'itt') return 'itt_x';
@@ -336,6 +460,18 @@
     const min = Math.min(bbox[1], bbox[3]);
     const max = Math.max(bbox[1], bbox[3]);
     return { min, max };
+  }
+
+  function clampPointToPanel(panelKey, x, y) {
+    const bbox = config.panels[panelKey]?.bbox;
+    if (!bbox) return { x, y, clamped: false };
+    const minX = Math.min(bbox[0], bbox[2]);
+    const maxX = Math.max(bbox[0], bbox[2]);
+    const minY = Math.min(bbox[1], bbox[3]);
+    const maxY = Math.max(bbox[1], bbox[3]);
+    const cx = clamp(x, minX, maxX);
+    const cy = clamp(y, minY, maxY);
+    return { x: cx, y: cy, clamped: (cx !== x || cy !== y) };
   }
 
   function inRange(v, min, max) {
@@ -393,7 +529,7 @@
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
-      ctx.strokeStyle = s.style || 'rgba(255,80,80,0.9)';
+      ctx.strokeStyle = s.style || cssVar('--pac-overlay-point-stroke', 'rgba(255,80,80,0.9)');
       ctx.stroke();
     }
     ctx.restore();
@@ -403,9 +539,9 @@
       const c = toCanvas(p);
       ctx.beginPath();
       ctx.arc(c.x, c.y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.fillStyle = cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)');
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,80,80,0.95)';
+      ctx.strokeStyle = cssVar('--pac-overlay-point-stroke', 'rgba(255,80,80,0.95)');
       ctx.lineWidth = 2;
       ctx.stroke();
       if (p.label) {
@@ -415,7 +551,7 @@
 
     // warnings in HUD
     if (overlay.warnings.length) {
-      hudText.innerHTML = overlay.warnings.map(w => `âš ï¸ ${escapeHtml(w)}`).join('<br/>');
+      hudText.innerHTML = overlay.warnings.map(w => `[!] ${escapeHtml(w)}`).join('<br/>');
     } else {
       hudText.textContent = calMode
         ? 'Modo Admin Activo'
@@ -432,15 +568,15 @@
   function drawLabel(text, x, y) {
     const padX = 5;
     const padY = 3;
-    ctx.font = '11px system-ui';
+    ctx.font = canvasFont(10, 600);
     const w = ctx.measureText(text).width + padX * 2;
     const h = 16;
-    ctx.fillStyle = 'rgba(245,249,255,0.82)';
+    ctx.fillStyle = cssVar('--pac-label-bg', 'rgba(245,249,255,0.82)');
     ctx.fillRect(x, y - h + 2, w, h);
-    ctx.strokeStyle = 'rgba(26,37,51,0.45)';
+    ctx.strokeStyle = cssVar('--pac-label-border', 'rgba(26,37,51,0.45)');
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y - h + 2, w, h);
-    ctx.fillStyle = 'rgba(11,15,20,0.95)';
+    ctx.fillStyle = cssVar('--pac-label-text', 'rgba(11,15,20,0.95)');
     ctx.fillText(text, x + padX, y - padY);
   }
 
@@ -479,16 +615,17 @@
   function drawSavedLineFamily(family) {
     const meta = lineFamilyMeta[family];
     if (!meta) return;
+    const color = cssVar(meta.colorVar, meta.fallback);
     const lines = config.lines[family] || [];
     lines.forEach((line) => {
       const pts = lineToPoints(line);
       if (!pts || pts.length < 2) return;
-      drawSavedPolyline(pts, meta.color);
+      drawSavedPolyline(pts, color);
       for (const p of pts) {
         const c = toCanvas({ x: p[0], y: p[1] });
         ctx.beginPath();
         ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = meta.color;
+        ctx.fillStyle = color;
         ctx.fill();
       }
       const labelPt = pts[Math.floor(pts.length / 2)];
@@ -500,9 +637,10 @@
   function drawSavedCalibrationGeometry() {
     const s = currentStep();
     const skipAxis = (s.kind === 'xaxis') ? axisKey(s.panel) : null;
-    if (skipAxis !== 'p1_x') drawSavedAxis('p1_x', 'rgba(255,132,173,0.95)');
-    if (skipAxis !== 'itt_x') drawSavedAxis('itt_x', 'rgba(255,132,173,0.95)');
-    if (skipAxis !== 'ng_x') drawSavedAxis('ng_x', 'rgba(255,132,173,0.95)');
+    const axisColor = cssVar('--pac-axis', 'rgba(255,132,173,0.95)');
+    if (skipAxis !== 'p1_x') drawSavedAxis('p1_x', axisColor);
+    if (skipAxis !== 'itt_x') drawSavedAxis('itt_x', axisColor);
+    if (skipAxis !== 'ng_x') drawSavedAxis('ng_x', axisColor);
     drawSavedLineFamily('altitude');
     drawSavedLineFamily('oat_itt');
     drawSavedLineFamily('oat_ng');
@@ -514,8 +652,8 @@
     ctx.save();
     ctx.lineWidth = 2;
     ctx.setLineDash([8, 4]);
-    ctx.strokeStyle = 'rgba(43,124,255,0.9)';
-    ctx.fillStyle = 'rgba(43,124,255,0.08)';
+    ctx.strokeStyle = cssVar('--pac-overlay-primary', 'rgba(43,124,255,0.9)');
+    ctx.fillStyle = cssVar('--pac-overlay-fill', 'rgba(43,124,255,0.08)');
 
     for (const key of ['p1', 'itt', 'ng']) {
       const bbox = panels[key].bbox;
@@ -527,10 +665,10 @@
       const rw = Math.abs(b.x-a.x), rh = Math.abs(b.y-a.y);
       ctx.fillRect(rx, ry, rw, rh);
       ctx.strokeRect(rx, ry, rw, rh);
-      ctx.fillStyle = 'rgba(232,238,246,0.95)';
-      ctx.font = '12px system-ui';
+      ctx.fillStyle = cssVar('--pac-overlay-point-fill', 'rgba(232,238,246,0.95)');
+      ctx.font = canvasFont(11, 700);
       ctx.fillText(key.toUpperCase(), rx+8, ry+16);
-      ctx.fillStyle = 'rgba(43,124,255,0.08)';
+      ctx.fillStyle = cssVar('--pac-overlay-fill', 'rgba(43,124,255,0.08)');
     }
 
     ctx.setLineDash([]);
@@ -542,7 +680,7 @@
       const c = toCanvas({x:pt[0], y:pt[1]});
       ctx.beginPath();
       ctx.arc(c.x, c.y, 6, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(43,124,255,0.9)';
+      ctx.fillStyle = cssVar('--pac-overlay-primary', 'rgba(43,124,255,0.9)');
       ctx.fill();
       drawLabel(String(i + 1), c.x + 8, c.y + 6);
     }
@@ -556,7 +694,7 @@
         const p = toCanvas({x:calClicks[i][0], y:calClicks[i][1]});
         ctx.lineTo(p.x, p.y);
       }
-      ctx.strokeStyle = 'rgba(43,124,255,0.9)';
+      ctx.strokeStyle = cssVar('--pac-overlay-primary', 'rgba(43,124,255,0.9)');
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -1065,8 +1203,12 @@
       else {
         const x_itt = x_low + oatIttBracket.u * (x_high - x_low);
         ITT_max = panelXPxToValue('itt', x_itt);
-        // overlay
-        overlay.points.push({x:x_itt, y:y_transfer, label:'ITT max'});
+        const ittPt = clampPointToPanel('itt', x_itt, y_transfer);
+        if (ittPt.clamped) {
+          warnings.push('El punto ITT calculado quedó fuera del panel y fue ajustado al límite.');
+          outOfRange = true;
+        }
+        overlay.points.push({x:ittPt.x, y:ittPt.y, label:'ITT max'});
       }
     }
 
@@ -1085,25 +1227,36 @@
       else {
         const x_ng = x_low + oatNgBracket.u * (x_high - x_low);
         NG_max = panelXPxToValue('ng', x_ng);
-        overlay.points.push({x:x_ng, y:y_transfer, label:'NG max'});
+        const ngPt = clampPointToPanel('ng', x_ng, y_transfer);
+        if (ngPt.clamped) {
+          warnings.push('El punto NG calculado quedó fuera del panel y fue ajustado al límite.');
+          outOfRange = true;
+        }
+        overlay.points.push({x:ngPt.x, y:ngPt.y, label:'NG max'});
       }
     }
 
     // overlay for process lines
     if (x_tq != null && y_transfer != null) {
+      const transferPt = clampPointToPanel('p1', x_tq, y_transfer);
+      if (transferPt.clamped) {
+        warnings.push('El punto de transferencia quedó fuera del panel y fue ajustado al límite.');
+        outOfRange = true;
+      }
       // point at panel1 intersection
-      overlay.points.push({x:x_tq, y:y_transfer, label:'Transfer'});
+      overlay.points.push({x:transferPt.x, y:transferPt.y, label:'Transfer'});
       // vertical segment in panel1 (from near bottom of panel1 bbox to y_transfer)
       const bbox = config.panels.p1.bbox;
       if (bbox) {
         const y_bottom = Math.max(bbox[1], bbox[3]);
-        overlay.segments.push({a:{x:x_tq, y:y_bottom}, b:{x:x_tq, y:y_transfer}});
+        overlay.segments.push({a:{x:transferPt.x, y:y_bottom}, b:{x:transferPt.x, y:transferPt.y}});
       }
       // horizontal transfer line across to ITT/NG panels (visual)
       const pItt = config.panels.itt.bbox;
       const pNg = config.panels.ng.bbox;
-      if (pItt) overlay.segments.push({a:{x:x_tq, y:y_transfer}, b:{x:pItt[0], y:y_transfer}, style:'rgba(255,200,80,0.9)'});
-      if (pNg) overlay.segments.push({a:{x:x_tq, y:y_transfer}, b:{x:pNg[0], y:y_transfer}, style:'rgba(255,200,80,0.9)'}); 
+      const transferColor = cssVar('--pac-overlay-transfer', 'rgba(255,200,80,0.9)');
+      if (pItt) overlay.segments.push({a:{x:transferPt.x, y:transferPt.y}, b:{x:pItt[0], y:transferPt.y}, style: transferColor});
+      if (pNg) overlay.segments.push({a:{x:transferPt.x, y:transferPt.y}, b:{x:pNg[0], y:transferPt.y}, style: transferColor});
     }
 
     // comparisons
@@ -1519,7 +1672,24 @@
   canvas.addEventListener('touchmove', onTouchMove, {passive:true});
   canvas.addEventListener('touchend', onTouchEnd, {passive:true});
 
+  if (window.ResizeObserver) {
+    const resizeTarget = document.getElementById('canvasWrap') || canvas;
+    const observer = new ResizeObserver(() => resize());
+    observer.observe(resizeTarget);
+  }
+
+  window.addEventListener('message', (event) => {
+    if (!event || !event.data || event.data.type !== 'AW139_MODE') return;
+    applyMode(event.data.mode);
+  });
+
+  window.addEventListener('storage', (event) => {
+    if (event.key !== 'aw139-mode') return;
+    applyMode(event.newValue || MODES.NIGHT);
+  });
+
   // ---------- init ----------
+  syncModeFromHost();
   populateStepSelect();
   setHelp();
   updateStepUI();
@@ -1528,14 +1698,21 @@
   (async () => {
     const loadedUrl = await loadUrlConfigIfNeeded();
     const loadedBundled = loadedUrl ? false : loadBundledConfigIfNeeded();
+    const autoScaledNow = img.complete ? maybeAutoScaleLegacyConfigToImage() : false;
     if (loadedUrl || loadedBundled) {
       hudText.textContent = 'Configuracion calibrada cargada automaticamente.';
+      refreshStatus();
+      draw();
+    }
+    if (autoScaledNow) {
+      hudText.textContent = 'Configuracion ajustada automaticamente a la resolucion de la carta.';
       refreshStatus();
       draw();
     }
   })();
 
   img.onload = () => {
+    const autoScaled = maybeAutoScaleLegacyConfigToImage();
     // fit view to screen
     const rect = canvas.getBoundingClientRect();
     const sx = rect.width / img.width;
@@ -1543,6 +1720,10 @@
     view.scale = Math.min(sx, sy);
     view.tx = (rect.width - img.width * view.scale) / 2;
     view.ty = (rect.height - img.height * view.scale) / 2;
+    if (autoScaled) {
+      hudText.textContent = 'Configuracion ajustada automaticamente a la resolucion de la carta.';
+      refreshStatus();
+    }
     draw();
   };
 
