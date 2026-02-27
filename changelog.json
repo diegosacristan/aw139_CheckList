@@ -1,0 +1,13 @@
+{
+  "versions": {
+    "1.1.0": [
+      "Se agregó versionado dual: APP_VERSION y CONTENT_VERSION visibles en la UI.",
+      "Nueva ventana de Novedades que aparece una sola vez por versión de app.",
+      "Service Worker ahora usa caché versionada por APP_VERSION y limpia cachés viejas automáticamente.",
+      "Mejoras táctiles en checklist: áreas de toque más grandes y protección anti-scroll accidental."
+    ]
+  },
+  "latest": [
+    "Mejoras generales de estabilidad y mantenimiento."
+  ]
+}

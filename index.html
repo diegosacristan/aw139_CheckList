@@ -1290,6 +1290,7 @@
     .two-col { grid-template-columns: 1fr; }
   }
 </style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -1340,7 +1341,7 @@
         </svg></span>
       <span class="m-label" id="mode-label">NOCHE</span>
     </button>
-    <button id="nvg-toggle" class="mode-btn" onclick="toggleNVG()" title="Modo NVG – MIL-STD-3009 Clase A">
+    <button id="nvg-toggle" class="mode-btn" onclick="toggleNVG()" title="Modo NVG – Night Vision Goggles">
       <svg class="m-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="2" y="9" width="8" height="7" rx="3" stroke="currentColor" stroke-width="1.5"/>
           <rect x="14" y="9" width="8" height="7" rx="3" stroke="currentColor" stroke-width="1.5"/>
@@ -1359,8 +1360,8 @@
 <div id="main">
   <div id="topbar">
     <div class="section-title" id="section-label">COCKPIT SAFETY / PRE-START</div>
-    <span class="nvg-badge">● NVG MODE – MIL-STD-3009</span>
-    <div class="meta">ISSUE 6 &nbsp;|&nbsp; 20-AUG-2025<br>AW-139 – FAC 0008</div>
+    <span class="nvg-badge">● NVG FRIENDLY MODE </span>
+    <div class="meta">ISSUE 6 &nbsp;|&nbsp; 20-AUG-2025<br>AW-139 – FAC 0008<br><span id="version-display" class="version-display">APP v-- | CONTENT --</span></div>
   </div>
 
   <div id="content">
@@ -2015,6 +2016,25 @@
     <button id="update-btn" type="button">Actualizar</button>
   </div>
 
+  <div id="whatsnew-modal" class="whatsnew-modal" aria-hidden="true">
+    <div class="whatsnew-dialog" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
+      <div class="whatsnew-header">
+        <h2 id="whatsnew-title">Novedades</h2>
+        <button type="button" id="whatsnew-close-top" class="whatsnew-close" aria-label="Cerrar novedades">×</button>
+      </div>
+      <div class="whatsnew-body">
+        <div class="whatsnew-version" id="whatsnew-version-label">APP v--</div>
+        <ul id="whatsnew-list">
+          <li>Mejoras generales de estabilidad.</li>
+        </ul>
+      </div>
+      <div class="whatsnew-footer">
+        <button type="button" id="whatsnew-close-btn" class="check-all-btn">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+<script src="config.js"></script>
 <script>
 const labels = {
   cockpit: 'COCKPIT SAFETY / PRE-START',
@@ -2031,6 +2051,12 @@ const labels = {
   drymot: 'DRY MOTORING RUN',
   exhaust: 'AFTER SHUTDOWN – EXHAUST FIRE'
 };
+
+const VERSION_CFG = window.APP_CONFIG || {};
+const APP_VERSION = VERSION_CFG.APP_VERSION || '0.0.0-dev';
+const CONTENT_VERSION = VERSION_CFG.CONTENT_VERSION || 'unknown';
+const LAST_SEEN_VERSION_KEY = 'aw139-last-seen-version';
+const CHANGELOG_URL = VERSION_CFG.CHANGELOG_URL || './changelog.json';
 
 // Registro escalable de modulos de calculo por carta.
 // Para agregar otra carta: crear nuevo toolId con su src y altura.
@@ -2088,6 +2114,66 @@ function mountCalcToolHost(host) {
 
 function initCalcTools() {
   document.querySelectorAll('[data-calc-tool-host]').forEach(mountCalcToolHost);
+}
+
+function renderVersionInfo() {
+  const versionEl = document.getElementById('version-display');
+  if (!versionEl) return;
+  versionEl.textContent = `APP v${APP_VERSION} | CONTENT ${CONTENT_VERSION}`;
+}
+
+function normalizeChangelogItems(payload, version) {
+  if (!payload) return [];
+  const exact = payload.versions && Array.isArray(payload.versions[version]) ? payload.versions[version] : null;
+  if (exact && exact.length) return exact;
+  if (Array.isArray(payload.latest) && payload.latest.length) return payload.latest;
+  return [];
+}
+
+async function loadWhatsNewItems(version) {
+  try {
+    const res = await fetch(CHANGELOG_URL, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return normalizeChangelogItems(json, version);
+  } catch (err) {
+    return [];
+  }
+}
+
+function closeWhatsNewModal() {
+  const modal = document.getElementById('whatsnew-modal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden', 'true');
+  localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION);
+}
+
+async function maybeShowWhatsNew() {
+  const seen = localStorage.getItem(LAST_SEEN_VERSION_KEY);
+  if (seen === APP_VERSION) return;
+
+  const modal = document.getElementById('whatsnew-modal');
+  const list = document.getElementById('whatsnew-list');
+  const label = document.getElementById('whatsnew-version-label');
+  if (!modal || !list || !label) {
+    localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION);
+    return;
+  }
+
+  const items = await loadWhatsNewItems(APP_VERSION);
+  label.textContent = `APP v${APP_VERSION}  |  CONTENT ${CONTENT_VERSION}`;
+  list.innerHTML = '';
+
+  const safeItems = items.length ? items : ['Actualizacion aplicada correctamente. Revisa los cambios operacionales y de UI.'];
+  safeItems.forEach((item) => {
+    const li = document.createElement('li');
+    li.textContent = item;
+    list.appendChild(li);
+  });
+
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
 }
 
 function show(id) {
@@ -2751,6 +2837,9 @@ Object.keys(labels).forEach(id => updateProgress(id));
 // Update banner control
 const updateBanner = document.getElementById('update-banner');
 const updateBtn = document.getElementById('update-btn');
+const whatsNewCloseTop = document.getElementById('whatsnew-close-top');
+const whatsNewCloseBtn = document.getElementById('whatsnew-close-btn');
+const whatsNewModal = document.getElementById('whatsnew-modal');
 let pendingSW = null;
 
 function showUpdateBanner() {
@@ -2765,10 +2854,27 @@ if (updateBtn) {
   });
 }
 
+if (whatsNewCloseTop) whatsNewCloseTop.addEventListener('click', closeWhatsNewModal);
+if (whatsNewCloseBtn) whatsNewCloseBtn.addEventListener('click', closeWhatsNewModal);
+if (whatsNewModal) {
+  whatsNewModal.addEventListener('click', (event) => {
+    if (event.target === whatsNewModal) closeWhatsNewModal();
+  });
+}
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && whatsNewModal && whatsNewModal.classList.contains('show')) {
+    closeWhatsNewModal();
+  }
+});
+
+renderVersionInfo();
+maybeShowWhatsNew();
+
 // --- SERVICE WORKER REGISTRATION ---
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
+    const swUrl = `./sw.js?v=${encodeURIComponent(APP_VERSION)}`;
+    navigator.serviceWorker.register(swUrl)
       .then(reg => {
         if (reg.waiting) {
           pendingSW = reg.waiting;
@@ -2797,12 +2903,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<script src="app.js"></script>
 </body>
 </html>
-
-
-
-
-
-
 
