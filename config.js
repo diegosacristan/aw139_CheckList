@@ -1,6 +1,7 @@
-// Central version config for UI + SW registration.
+﻿// Central version config for UI + SW registration.
 window.APP_CONFIG = Object.freeze({
-  APP_VERSION: '1.1.0',
-  CONTENT_VERSION: '2026.02.26-a',
+  APP_VERSION: '1.1.5',
+  CONTENT_VERSION: '2026.02.27-f',
   CHANGELOG_URL: './changelog.json'
 });
+

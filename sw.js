@@ -27,7 +27,11 @@ const ASSETS = [
   './pac/app.js',
   './pac/styles.css',
   './pac/aw139_pac_chart_config.js',
-  './pac/power_assurance_chart.png'
+  './pac/power_assurance_chart.png',
+  // Safety references integrated in main index
+  './assets/briefings/facdee_01.jpeg',
+  './assets/briefings/debriefing_tem.jpeg',
+  './assets/briefings/airmanship_tem.jpeg'
 ];
 
 self.addEventListener('install', (event) => {

@@ -1,13 +1,44 @@
-{
-  "versions": {
-    "1.1.0": [
-      "Se agregó versionado dual: APP_VERSION y CONTENT_VERSION visibles en la UI.",
-      "Nueva ventana de Novedades que aparece una sola vez por versión de app.",
-      "Service Worker ahora usa caché versionada por APP_VERSION y limpia cachés viejas automáticamente.",
-      "Mejoras táctiles en checklist: áreas de toque más grandes y protección anti-scroll accidental."
-    ]
-  },
-  "latest": [
-    "Mejoras generales de estabilidad y mantenimiento."
-  ]
+﻿{
+    "versions":  {
+                     "1.1.5":  [
+                                   "Se agrego menu AJUSTES UI en barra lateral para personalizar tamano de fuente y tamano de franjas de cada paso.",
+                                   "Los ajustes se guardan por usuario/dispositivo en localStorage y se restauran automaticamente al abrir la app.",
+                                   "Se escalo dinamicamente tipografia y altura de filas de checklist para mejorar legibilidad segun preferencia operativa.",
+                                   "Se corrigio el ajuste FRANJAS para que afecte tambien la capa tactil de filas (altura real, padding, ancho de check y espaciado).",
+                                   "Ahora el cambio de FRANJAS es visualmente evidente en toda la tabla de checklist."
+                               ],
+                     "1.1.4":  [
+                                   "Safety Briefings ahora abre con menu de seleccion por tipo de briefing (Mision, Tripulacion, Pasajeros, Debriefing y TEM & Airmanship).",
+                                   "Las referencias visuales quedaron unicamente en la opcion TEM & Airmanship con las tres imagenes mandatorias.",
+                                   "Se corrigio el alcance de CHECK ALL, RESET y progreso para operar sobre el briefing de safety actualmente seleccionado.",
+                                   "Se actualizo el precache del Service Worker para incluir debriefing_tem.jpeg y airmanship_tem.jpeg."
+                               ],
+                     "1.1.3":  [
+                                   "Safety Briefings reescrito para recuperar funcionalidad completa del modulo embebido (Hub, Mision, Tripulacion, Pax y Debrief).",
+                                   "Se corrigio el bloqueo de pantalla en blanco causado por script incompleto en safety/app.js.",
+                                   "Se integraron vistas funcionales con checklist operacionales de TEM y Airmanship y referencias visuales FACDEE.",
+                                   "Se restablecio interaccion tactil por fila completa con proteccion anti-scroll para evitar misclicks."
+                               ],
+                     "1.1.2":  [
+                                   "Safety Briefings ahora incluye fallback automatico a almacenamiento local si IndexedDB falla en iframe.",
+                                   "Se agrego manejo visible de errores JavaScript y promesas para evitar pantalla en blanco.",
+                                   "Se reforzo compatibilidad reemplazando replaceAll por replace regex para navegadores operativos antiguos.",
+                                   "Se anadio bloque guia TEM + Airmanship dentro del briefing de tripulacion."
+                               ],
+                     "1.1.1":  [
+                                   "Safety Briefings ahora carga con scripts clasicos para evitar fallos silenciosos en iframe y habilitar todos los botones.",
+                                   "Se corrigio la integracion operativa del indicador de posicion para la seccion Safety desde postMessage.",
+                                   "Se integraron imagenes de referencia FACDEE y emblemas operacionales dentro de Safety Hub.",
+                                   "Se actualizo cache offline para incluir assets de Safety y forzar renovacion de Service Worker."
+                               ],
+                     "1.1.0":  [
+                                   "Se agrego versionado dual: APP_VERSION y CONTENT_VERSION visibles en la UI.",
+                                   "Nueva ventana de Novedades que aparece una sola vez por version de app.",
+                                   "Service Worker ahora usa cache versionada por APP_VERSION y limpia caches viejas automaticamente.",
+                                   "Mejoras tactiles en checklist: areas de toque mas grandes y proteccion anti-scroll accidental."
+                               ]
+                 },
+    "latest":  [
+                   "Mejoras generales de estabilidad y mantenimiento."
+               ]
 }

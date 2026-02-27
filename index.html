@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,7 @@
 <title>AW139 ÁGUILA 1 – Checklist</title>
 
 <!-- --- PWA MANIFEST --- -->
-<link rel="manifest" href="/aw139_CheckList/manifest.json">
+<link rel="manifest" href="manifest.json">
 
 <!-- --- PWA / iOS HOME SCREEN --- -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,6 +22,9 @@
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap">
 
 
 
@@ -65,8 +68,6 @@
 </style>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap');
-
   /* --- PALETA NOCTURNA (defecto) --- */
   :root {
     --bg: #1a1f2e;
@@ -199,6 +200,8 @@
     --abort-list-bullet: #ff4444;
     --abort-ff-text: #c65a41;
     --abort-ff-accent: #ff9a4a;
+    --ui-font-scale: 1;
+    --ui-row-scale: 1;
   }
 
   /* --- PALETA DIURNA --- */
@@ -515,8 +518,12 @@
   :root[data-mode="nvg"] .row-repeat td        { color: #00DD22 !important; }
   :root[data-mode="nvg"] .banner.red           { background: #001800 !important; color: #00EE33 !important; animation: nvgPulse 1.2s ease-in-out infinite; }
   :root[data-mode="nvg"] .banner.amber         { background: #001400 !important; color: #00CC22 !important; animation: nvgPulse 2s ease-in-out infinite; }
+  :root[data-mode="nvg"] .banner.green         { background: #001800 !important; color: #00EE33 !important; animation: nvgPulse 1.6s ease-in-out infinite; }
   :root[data-mode="nvg"] .banner.note          { background: #000C18 !important; color: #0077CC !important; border-color: #003388 !important; }
   :root[data-mode="nvg"] .row-note td          { color: #005522 !important; background: #000810 !important; }
+  :root[data-mode="nvg"] .row-evacuate         { background: #001800 !important; border-top: 1px solid #00AA22 !important; border-bottom: 1px solid #00AA22 !important; }
+  :root[data-mode="nvg"] .row-evacuate .item-name,
+  :root[data-mode="nvg"] .row-evacuate .item-action { color: #00EE33 !important; }
   :root[data-mode="nvg"] .info-block           { background: #000810 !important; border-color: #003388 !important; color: #005599 !important; }
   :root[data-mode="nvg"] .info-link            { color: #0077CC !important; }
   :root[data-mode="nvg"] .cl-table tr.checked .item-name { color: #003318 !important; }
@@ -804,17 +811,17 @@
   .cl-table tr.checked .check-box::after { content: '✓'; color: white; font-size: 10px; }
 
   .cl-table td {
-    padding: 9px 10px;
-    font-size: 16px;
+    padding: calc(9px * var(--ui-row-scale)) calc(10px * var(--ui-row-scale));
+    font-size: calc(16px * var(--ui-font-scale));
     vertical-align: middle;
   }
   .item-num {
-    width: 34px;
+    width: calc(34px * var(--ui-row-scale));
     text-align: right;
     color: var(--dim);
     font-family: 'Share Tech Mono', monospace;
-    font-size: 13px;
-    padding-right: 6px;
+    font-size: calc(13px * var(--ui-font-scale));
+    padding-right: calc(6px * var(--ui-row-scale));
   }
   .item-name {
     color: var(--text);
@@ -823,7 +830,7 @@
   }
   .item-name .note {
     font-weight: 400;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-font-scale));
     color: var(--dim);
     font-style: italic;
   }
@@ -831,18 +838,18 @@
     text-align: right;
     color: var(--gold);
     font-family: 'Share Tech Mono', monospace;
-    font-size: 14px;
+    font-size: calc(14px * var(--ui-font-scale));
     letter-spacing: 0.5px;
     font-weight: 700;
-    padding-right: 12px;
+    padding-right: calc(12px * var(--ui-row-scale));
   }
   .check-col {
-    width: 36px;
+    width: calc(36px * var(--ui-row-scale));
     text-align: center;
   }
   .check-box {
-    width: 18px;
-    height: 18px;
+    width: calc(18px * var(--ui-row-scale));
+    height: calc(18px * var(--ui-row-scale));
     border: 1.5px solid var(--border);
     border-radius: 2px;
     display: inline-flex;
@@ -861,12 +868,22 @@
   }
   .row-note td {
     color: var(--dim);
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-font-scale));
     font-style: italic;
     text-align: center;
-    padding: 5px 14px;
+    padding: calc(5px * var(--ui-row-scale)) calc(14px * var(--ui-row-scale));
     letter-spacing: 0.5px;
     font-family: 'Share Tech Mono', monospace;
+  }
+  .row-evacuate {
+    background: #2a0a0a !important;
+    border-top: 1px solid #7a1f1f;
+    border-bottom: 1px solid #7a1f1f;
+  }
+  .row-evacuate .item-name,
+  .row-evacuate .item-action {
+    color: #ff6b6b !important;
+    font-weight: 700;
   }
   /* -- REPEAT ENGINE row – high visibility -- */
   .row-repeat {
@@ -877,24 +894,21 @@
   }
   .row-repeat td {
     color: #ffb940;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-font-scale));
     font-family: 'Barlow Condensed', sans-serif;
     font-weight: 700;
     font-style: normal;
     text-align: center;
     letter-spacing: 2px;
-    padding: 7px 5px;
+    padding: calc(7px * var(--ui-row-scale)) calc(5px * var(--ui-row-scale));
     text-transform: uppercase;
   }
-  .row-repeat td::before { content: '↻ '; font-size: 13px; }
+  .row-repeat td::before { content: '↻ '; font-size: calc(13px * var(--ui-font-scale)); }
   @keyframes repeatPulse {
     0%, 100% { box-shadow: inset 0 0 0px #e88f00; }
     50%       { box-shadow: inset 0 0 10px #e88f0044; }
   }
 
-  .cl-table tr:has(.item-name:-webkit-contains("→")) {
-    background: #160e03 !important;
-  }
   /* Target rows whose item-name starts with → */
   .cl-table td.item-name[data-ff="1"] {
     color: #ffb060;
@@ -948,6 +962,7 @@
   }
   .banner.red    { background: var(--red); color: #fff; }
   .banner.amber  { background: var(--amber); color: #0a0800; }
+  .banner.green  { background: var(--green); color: #fff; }
   .banner.note   { background: #1a2236; color: var(--gold); border: 1px solid var(--accent); }
 
   /* reset bar */
@@ -999,6 +1014,61 @@
     font-size: 10px;
     color: var(--dim);
     white-space: nowrap;
+  }
+
+  /* safety briefings */
+  .safety-brief-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--pac-panel-bg);
+    border-top: 1px solid var(--pac-panel-border);
+    border-bottom: 1px solid var(--pac-panel-border);
+  }
+  .safety-brief-btn {
+    border: 1px solid var(--phase-border);
+    background: var(--phase-bg);
+    color: var(--text);
+    border-radius: 2px;
+    padding: 8px 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .safety-brief-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .safety-brief-btn.active {
+    background: var(--phase-header-bg);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .safety-brief-pane { display: none; }
+  .safety-brief-pane.active { display: block; }
+  .safety-refs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 10px;
+    padding: 12px 16px 16px;
+    background: var(--pac-panel-bg);
+    border-top: 1px solid var(--pac-panel-border);
+  }
+  .safety-ref-card {
+    background: var(--phase-bg);
+    border: 1px solid var(--phase-border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .safety-ref-card img {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 
   /* -- PROFILES -- */
@@ -1190,6 +1260,74 @@
   #nvg-toggle.nvg-on .m-label { color: #00AA44; }
   :root[data-mode="nvg"] #mode-toggle .m-label { color: var(--dim); }
 
+  .ui-menu {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--header-bg);
+  }
+  .ui-menu summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 8px 6px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    user-select: none;
+  }
+  .ui-summary-icon {
+    font-size: 10px;
+    line-height: 1;
+  }
+  .ui-menu summary::-webkit-details-marker { display: none; }
+  .ui-menu[open] summary {
+    color: var(--gold);
+    border-bottom: 1px solid var(--border);
+    background: var(--row-hover);
+  }
+  .ui-menu-body {
+    padding: 8px 8px 10px;
+    display: grid;
+    gap: 6px;
+  }
+  .ui-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.6px;
+    color: var(--dim);
+  }
+  .ui-range {
+    width: 100%;
+    accent-color: var(--gold);
+  }
+  .ui-reset-btn {
+    width: 100%;
+    margin-top: 2px;
+    padding: 5px 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--dim);
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .ui-reset-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
   /* Transición suave al cambiar modo */
   body, #sidebar, #topbar, .cl-table td, .nav-btn, .cl-section-header {
     transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
@@ -1305,7 +1443,7 @@
   </div>
   <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
   <div style="font-family:'Courier New',monospace;font-size:9px;color:#1a2a3a;letter-spacing:2px;margin-top:4px;">LOADING SYSTEMS...</div>
-  <div style="position:absolute;bottom:20px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#1a2a3a;letter-spacing:1px;color:#005522;">DESIGNED BY ANTHRAX</div>
+  <div style="position:absolute;bottom:20px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:#005522;">DESIGNED BY ANTHRAX</div>
 </div>
 
 <!-- SIDEBAR -->
@@ -1325,6 +1463,7 @@
   <button class="nav-btn blue" onclick="show('ifr')" id="btn-ifr">IFR<br>DEP/APP</button>
   <button class="nav-btn blue" onclick="show('subsequent')" id="btn-subsequent">SUBSEQ.<br>STARTS</button>
   <button class="nav-btn teal" onclick="show('pac')" id="btn-pac">POWER<br>ASSURANCE</button>
+  <button class="nav-btn teal" onclick="show('safety')" id="btn-safety">SAFETY<br>BRIEFINGS</button>
   <button class="nav-btn olive" onclick="show('profiles')" id="btn-profiles">T/O &amp; LDG<br>PROFILES</button>
   <button class="nav-btn amber" onclick="show('abort')" id="btn-abort">ABORT<br>START</button>
   <button class="nav-btn amber" onclick="show('drymot')" id="btn-drymot">DRY<br>MOTOR</button>
@@ -1354,14 +1493,41 @@
       <span class="m-label" id="nvg-label">NVG</span>
     </button>
   </div>
+  <details class="ui-menu" id="ui-menu">
+    <summary><span class="ui-summary-icon" aria-hidden="true">⚙</span><span>AJUSTES</span></summary>
+    <div class="ui-menu-body">
+      <div class="ui-label-row">
+        <span>FUENTE</span>
+        <span id="ui-font-value">100%</span>
+      </div>
+      <input id="ui-font-range" class="ui-range" type="range" min="85" max="125" step="5" value="100">
+      <div class="ui-label-row">
+        <span>FRANJAS</span>
+        <span id="ui-row-value">100%</span>
+      </div>
+      <input id="ui-row-range" class="ui-range" type="range" min="85" max="135" step="5" value="100">
+      <button type="button" id="ui-reset-btn" class="ui-reset-btn">RESTABLECER</button>
+    </div>
+  </details>
 </nav>
 
 <!-- MAIN -->
 <div id="main">
   <div id="topbar">
-    <div class="section-title" id="section-label">COCKPIT SAFETY / PRE-START</div>
-    <span class="nvg-badge">● NVG FRIENDLY MODE </span>
-    <div class="meta">ISSUE 6 &nbsp;|&nbsp; 20-AUG-2025<br>AW-139 – FAC 0008<br><span id="version-display" class="version-display">APP v-- | CONTENT --</span></div>
+    <div class="topbar-head">
+      <div class="section-title" id="section-label">COCKPIT SAFETY / PRE-START</div>
+      <span class="nvg-badge">NVG FRIENDLY MODE </span>
+      <div class="meta">ISSUE 6 &nbsp;|&nbsp; 20-AUG-2025<br>AW-139 – FAC 0008<br><span id="version-display" class="version-display">APP v-- | CONTENT --</span></div>
+    </div>
+    <div id="op-indicator" class="op-indicator" aria-live="polite">
+      <div class="op-indicator-line">
+        <span id="op-breadcrumb" class="op-breadcrumb">COCKPIT SAFETY / PRE-START > COCKPIT / SAFETY CHECK</span>
+        <span id="op-count" class="op-count">0/0 ítems</span>
+      </div>
+      <div class="op-progress-track" role="progressbar" aria-label="Progreso subsección" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="op-progress-fill" class="op-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
   </div>
 
   <div id="content">
@@ -1413,7 +1579,7 @@
         <table class="cl-table">
           <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Headset</td><td class="item-action">PUT ON</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Electrical Switches</td><td class="item-action">ON (VOLTS)</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">External Power</td><td class="item-action"> A/R</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">External Power</td><td class="item-action">A/R</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Bus Tie</td><td class="item-action">(1) AUTO / (2) ON / EPU AUTO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">MFD</td><td class="item-action">CHECK VOLT / FUEL</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">CAS MESSAGES</td><td class="item-action">CHECK</td><td class="check-col"><div class="check-box"></div></td></tr>
@@ -1666,9 +1832,9 @@
           <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">TEM Brief</td><td class="item-action">PERFORM</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Departure Plate</td><td class="item-action">REVIEW</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Nav Aids</td><td class="item-action">TUNED / AUTO</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">MCDU/ PFD / MFD / ESIS</td><td class="item-action">DEPTARTURE / ALTA / CRS SET</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">MCDU/ PFD / MFD / ESIS</td><td class="item-action">DEPARTURE / ALTA / CRS SET</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Altimeters</td><td class="item-action">3 SET / X CHECK</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">ATC Clearance</td><td class="item-action">OBTAINE</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">ATC Clearance</td><td class="item-action">OBTAINED</td><td class="check-col"><div class="check-box"></div></td></tr>
         </table>
       </div>
 
@@ -1676,7 +1842,7 @@
         <div class="cl-section-header">IFR ARRIVAL BRIEFING</div>
         <table class="cl-table">
           <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">WHOLDS</td><td class="item-action">COMPLETE</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">TEM Brief</td><td class="item-action"> PERFORM</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">TEM Brief</td><td class="item-action">PERFORM</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Nav Aids</td><td class="item-action">TUNED / AUTO / RAIM</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">MCDU</td><td class="item-action">ARRIVAL</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Nav Source / PFD / ESIS</td><td class="item-action">(NAV / PREVIEW / LNAV) / CRS / DH</td><td class="check-col"><div class="check-box"></div></td></tr>
@@ -1723,10 +1889,9 @@
           <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Chocks</td><td class="item-action">REMOVED</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">7</td><td class="item-name">Electrical Switches</td><td class="item-action">ON</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">8</td><td class="item-name">External Lights</td><td class="item-action">ON (A/R)</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">9</td><td class="item-name">Chocks</td><td class="item-action">REMOVED</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">10</td><td class="item-name">CAS Messages</td><td class="item-action">CHECK</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">11</td><td class="item-name">MFD</td><td class="item-action">MAP / PLAN BOXES SET</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">12</td><td class="item-name">PFD</td><td class="item-action">(BEAR / HSI / ALTA) SET</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">9</td><td class="item-name">CAS Messages</td><td class="item-action">CHECK</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">10</td><td class="item-name">MFD</td><td class="item-action">MAP / PLAN BOXES SET</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">11</td><td class="item-name">PFD</td><td class="item-action">(BEAR / HSI / ALTA) SET</td><td class="check-col"><div class="check-box"></div></td></tr>
 
 
 
@@ -1738,14 +1903,14 @@
         <div class="pilot-header"><span>LHP</span><span>RHP</span></div>
         <table class="cl-table">
           <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">ATIS / Clearance</td><td class="item-action">OBTAIN</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">2</td><td class="item-name">Bus Tie (2) / PFD Bright</td><td class="item-action">ON / INCREASE</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">3</td><td class="item-name">ENG FUEL Switch</td><td class="item-action">ON</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">4</td><td class="item-name">ENG FUEL PUMP</td><td class="item-action">ON / CHECK PRESS</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">5</td><td class="item-name">Main Bus</td><td class="item-action">MINIMUM 23V</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">6</td><td class="item-name">ENG MODE Switch</td><td class="item-action">IDLE</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">7</td><td class="item-name">ENG MODE Switch</td><td class="item-action">FLIGHT (at 65% ± 1%)</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">8</td><td class="item-name">GEN</td><td class= "item-action">ON LINE / CHECK LOAD</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="ff-row"onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">9</td><td class="item-name">Bus Tie</td><td class="item-action">AUTO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">2</td><td class="item-name">Bus Tie (2) / PFD Bright</td><td class="item-action">ON / INCREASE</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">3</td><td class="item-name">ENG FUEL Switch</td><td class="item-action">ON</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">4</td><td class="item-name">ENG FUEL PUMP</td><td class="item-action">ON / CHECK PRESS</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">5</td><td class="item-name">Main Bus</td><td class="item-action">MINIMUM 23V</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">6</td><td class="item-name">ENG MODE Switch</td><td class="item-action">IDLE</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">7</td><td class="item-name">ENG MODE Switch</td><td class="item-action">FLIGHT (at 65% ± 1%)</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">8</td><td class="item-name">GEN</td><td class="item-action">ON LINE / CHECK LOAD</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">9</td><td class="item-name">Bus Tie</td><td class="item-action">AUTO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="row-repeat" onclick="repeatReset(this, 'subsequent', 2, 9)"><td colspan="4">REPEAT ITEMS 2 TO 9 FOR 2nd ENGINE</td></tr>
           <tr class="info-block" onclick="show('syschecks')" style="cursor:pointer;"><td colspan="3" style="text-align: center;"><strong class="info-link">GO TO SYS CHECKS MENU</strong></td></tr>
         </table>
@@ -1818,6 +1983,135 @@
         </div>
       </div>
 </div><!-- /panel-pac -->
+
+    <!-- ------------------ SAFETY BRIEFINGS ------------------ -->
+    <div class="section-panel" id="panel-safety">
+      <div class="reset-bar">
+        <button class="check-all-btn" onclick="checkAll('safety')">CHECK ALL</button>
+        <button class="reset-btn" onclick="resetSection('safety')">RESET</button>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="prog-safety" style="width:0%"></div></div>
+        <div class="progress-label" id="label-safety">0 / 0</div>
+      </div>
+      
+      <div class="safety-brief-menu" role="tablist" aria-label="Seleccion de briefing safety">
+        <button type="button" class="safety-brief-btn active" id="safety-brief-btn-mission" data-brief="mission" onclick="setSafetyBriefing('mission')">BRIEFING DE LA MISION</button>
+        <button type="button" class="safety-brief-btn" id="safety-brief-btn-crew" data-brief="crew" onclick="setSafetyBriefing('crew')">BRIEFING DE LA TRIPULACION</button>
+        <button type="button" class="safety-brief-btn" id="safety-brief-btn-pax" data-brief="pax" onclick="setSafetyBriefing('pax')">ORIENTACION DE PASAJEROS</button>
+        <button type="button" class="safety-brief-btn" id="safety-brief-btn-debrief" data-brief="debrief" onclick="setSafetyBriefing('debrief')">DEBRIEFING</button>
+        <button type="button" class="safety-brief-btn" id="safety-brief-btn-tem" data-brief="tem" onclick="setSafetyBriefing('tem')">TEM &amp; AIRMANSHIP</button>
+      </div>
+
+      <div class="safety-brief-pane active" id="safety-brief-mission" data-brief="mission">
+      <div class="cl-section" data-section="safety" style="margin-top:0;">
+        <div class="cl-section-header">BRIEFING DE LA MISION <span class="sub-note">Items minimos previos a la salida</span></div>
+        <table class="cl-table">
+          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Lider de mision</td><td class="item-action">NOMBRADO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Reconocimiento del campo/sitio</td><td class="item-action">REALIZADO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Meteorologia</td><td class="item-action">CHEQUEADA</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Alternos</td><td class="item-action">VERIFICADOS</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Vuelo en formacion</td><td class="item-action">ESTABLECER</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Tarjeta de riesgo</td><td class="item-action">DILIGENCIADA</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">7</td><td class="item-name">Controlador aereo</td><td class="item-action">VERIFICADO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">8</td><td class="item-name">Frecuencias</td><td class="item-action">ESTABLECIDAS</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">9</td><td class="item-name">Mapa de riesgos</td><td class="item-action">VERIFICADO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">10</td><td class="item-name">Riesgo BASH</td><td class="item-action">VERIFICADO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">11</td><td class="item-name">Equipo de mision</td><td class="item-action">REQUERIDO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="row-note"><td colspan="4">VIP1: reconocimiento de sitio obligatorio (peligros, parqueo, entradas/salidas y amenazas).</td></tr>
+        </table>
+      </div>
+
+      </div>
+      <div class="safety-brief-pane" id="safety-brief-crew" data-brief="crew">
+      <div class="cl-section" data-section="safety">
+        <div class="cl-section-header">BRIEFING DE LA TRIPULACION <span class="sub-note">MANTA + TEM + AIRMANSHIP</span></div>
+        <table class="cl-table">
+          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Introduccion de la tripulacion</td><td class="item-action">REALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Equipo personal y profesional</td><td class="item-action">VERIFICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Autonomia, control psicofisico y ETTO continuado</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Resistencia de la tripulacion (descanso)</td><td class="item-action">EVALUAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Tarjeta de riesgo</td><td class="item-action">REVISAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Orden de vuelo</td><td class="item-action">VALIDAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">7</td><td class="item-name">Mision (seguridad - cumplimiento - servicio)</td><td class="item-action">ALINEAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">8</td><td class="item-name">Safe Start: prisa, frustracion, fatiga, complacencia</td><td class="item-action">CHEQUEAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="row-note"><td colspan="4">TEM y AIRMANSHIP son obligatorios en todos los briefings de tripulacion.</td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">9</td><td class="item-name">TEM: amenazas identificadas y gestionadas</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">10</td><td class="item-name">TEM: errores identificados y solucionados</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">11</td><td class="item-name">TEM: UAS/estados no deseados recuperados</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">12</td><td class="item-name">Regla de cabina: anunciar amenaza/error y actuar de inmediato</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">13</td><td class="item-name">FACDEE (Factor, Alternativa, Consecuencias, Decision, Ejecucion, Evaluacion)</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">14</td><td class="item-name">Airmanship: disciplina, habilidades, conocimiento y juicio</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">15</td><td class="item-name">Rutas, altitudes y MEA</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">16</td><td class="item-name">Tiempo estimado en ruta</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">17</td><td class="item-name">Reabastecimiento y combustible</td><td class="item-action">CHEQUEAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">18</td><td class="item-name">Pasajeros: abordaje y desabordaje</td><td class="item-action">COORDINAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">19</td><td class="item-name">Plan de vuelo</td><td class="item-action">REVISAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">20</td><td class="item-name">Meteorologia / engelamiento / ASHTAM</td><td class="item-action">REVISAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">21</td><td class="item-name">NOTAMs / NANUs / P-RAIM</td><td class="item-action">VERIFICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">22</td><td class="item-name">Iluminacion y horarios operativos de aerodromos</td><td class="item-action">VERIFICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">23</td><td class="item-name">Aeronave: rendimiento, restricciones, equipo de emergencia y soporte tecnico</td><td class="item-action">CHEQUEAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">24</td><td class="item-name">Emergencias: contramedidas, salidas y responsabilidades PF/PM/Tecnico/PAX</td><td class="item-action">BRIEF</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">25</td><td class="item-name">Golden Rules y regla de dos retos</td><td class="item-action">APLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="row-note"><td colspan="4">Tareas generales por rol durante ejecucion de la mision.</td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">26</td><td class="item-name">PF: volar aeronave, evitar trafico/obstaculos, verificar instrumentos y radios</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">27</td><td class="item-name">PM: anunciar trafico, monitoreo interno, avionica/MCDU y chequeo combustible</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">28</td><td class="item-name">Tecnico: asegurar pasajeros/carga y anunciar trafico/obstaculos</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">29</td><td class="item-name">Tecnico: otros deberes ordenados por PF/PM</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">30</td><td class="item-name">Apoyo administrativo: tierra, servicio a bordo, parqueo y seguridad aeronave</td><td class="item-action">COORDINAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">31</td><td class="item-name">Apoyo administrativo: alojamiento, transporte y alimentacion</td><td class="item-action">COORDINAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">32</td><td class="item-name">Confirmacion final de orientacion de mision del PIC y la tripulacion</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+        </table>
+      </div>
+
+      </div>
+      <div class="safety-brief-pane" id="safety-brief-pax" data-brief="pax">
+      <div class="cl-section" data-section="safety">
+        <div class="cl-section-header">ORIENTACION A PASAJEROS <span class="sub-note">Full briefing y emergencia</span></div>
+        <table class="cl-table">
+          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Presentacion de la tripulacion</td><td class="item-action">REALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Datos de vuelo: rutas, altitud, tiempo en ruta y meteo</td><td class="item-action">INFORMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Entrada/salida del helicoptero, asientos y cinturones</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Movimientos internos, comunicaciones, no fumar, proteccion oidos</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Oxigeno/mascara, seguridad de equipo y combustible</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Equipo de supervivencia y salida de la aeronave</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">7</td><td class="item-name">Emergencia: salidas, crash kit/chalecos/extintor, aterrizaje y amarizaje forzoso</td><td class="item-action">BRIEF</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="row-note"><td colspan="4">Si el tiempo o la mision no lo permite, dirigir al pasajero a la tarjeta de emergencia.</td></tr>
+        </table>
+      </div>
+
+      </div>
+      <div class="safety-brief-pane" id="safety-brief-debrief" data-brief="debrief">
+      <div class="cl-section" data-section="safety">
+        <div class="cl-section-header">DEBRIEFING <span class="sub-note">Cierre post-fase o post-vuelo</span></div>
+        <table class="cl-table">
+          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Seguridad/UAS: se deterioraron margenes de seguridad?</td><td class="item-action">ANALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Amenazas y errores: te preparamos? lo reparamos?</td><td class="item-action">ANALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Normas/SOP: hubo violaciones? por que?</td><td class="item-action">ANALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Preguntas sin respuesta o problemas no resueltos</td><td class="item-action">REGISTRAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Oportunidades de mejora para el proximo vuelo</td><td class="item-action">DEFINIR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Cierre TEM + Airmanship aplicado durante la mision</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
+        </table>
+      </div>
+
+      </div>
+      <div class="safety-brief-pane" id="safety-brief-tem" data-brief="tem">
+        <div class="cl-section" data-section="safety">
+          <div class="cl-section-header">TEM &amp; AIRMANSHIP <span class="sub-note">Referencias visuales mandatorias</span></div>
+          <div class="safety-refs">
+            <article class="safety-ref-card">
+              <img src="assets/briefings/facdee_01.jpeg" alt="FACDEE" loading="lazy">
+            </article>
+            <article class="safety-ref-card">
+              <img src="assets/briefings/debriefing_tem.jpeg" alt="Debriefing" loading="lazy">
+            </article>
+            <article class="safety-ref-card">
+              <img src="assets/briefings/airmanship_tem.jpeg" alt="Airmanship" loading="lazy">
+            </article>
+          </div>
+        </div>
+      </div>
+    </div><!-- /panel-safety -->
 
     <!-- ------------------ T/O & LANDING CAT PROFILES ------------------ -->
     <div class="section-panel" id="panel-profiles">
@@ -1950,11 +2244,11 @@
 
     <!-- ------------------ DRY MOTORING ------------------ -->
     <div class="section-panel" id="panel-drymot">
-      <div class="banner green"> DRY MOTORING RUN</div>
+      <div class="banner green">DRY MOTORING RUN</div>
       <div class="cl-section" data-section="drymot" style="margin-top:12px;">
         <div class="cl-section-header" style="border-bottom-color: var(--green);">DRY MOTORING RUN</div>
         <table class="cl-table">
-          <tr class="ff-row"onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">ENG GOV Switch</td><td class="item-action">AUTO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">ENG GOV Switch</td><td class="item-action">AUTO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">ENG MODE Switch</td><td class="item-action">OFF</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">ECL</td><td class="item-action">OFF</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">FUEL PUMP Switch</td><td class="item-action">OFF</td><td class="check-col"><div class="check-box"></div></td></tr>
@@ -1964,7 +2258,7 @@
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num">8</td><td class="item-name">NG</td><td class="item-action">Increasing</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num">9</td><td class="item-name">ENG MODE Switch</td><td class="item-action">OFF</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num">10</td><td class="item-name">ENG IGN CB (White Ring)</td><td class="item-action">IN</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="row-repeat"><td colspan="4">REPEAT ALL ITEMS FOR 2nd ENGINE</td></tr>
+          <tr class="row-repeat" onclick="repeatReset(this, 'drymot', 1, 10)"><td colspan="4">REPEAT ALL ITEMS FOR 2nd ENGINE</td></tr>
         </table>
       </div>
       <div class="reset-bar">
@@ -1995,7 +2289,7 @@
           <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">ECL Starter Pushbutton</td><td class="item-action">PUSH</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">7</td><td class="item-name">Gas Generator (NG)</td><td class="item-action">Note increasing</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">8</td><td class="item-name">ECL Starter Pushbutton</td><td class="item-action">Push to STOP</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)" style="background:#2a0a0a;"><td class="item-num">9</td><td class="item-name" style="color:#ff6b6b; font-weight:700;">Rotors stopped → EVACUATE AIRCRAFT</td><td class="item-action" style="color:#ff6b6b;">⚠ EVACUATE</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="row-evacuate" onclick="toggle(this)"><td class="item-num">9</td><td class="item-name">Rotors stopped → EVACUATE AIRCRAFT</td><td class="item-action">⚠ EVACUATE</td><td class="check-col"><div class="check-box"></div></td></tr>
         </table>
       </div>
       <div class="reset-bar">
@@ -2046,6 +2340,7 @@ const labels = {
   ifr: 'IFR DEP / APP',
   subsequent: 'SUBSEQUENT STARTS',
   pac: 'POWER ASSURANCE CHECK',
+  safety: 'SAFETY BRIEFINGS',
   profiles: 'T/O & LANDING CATEGORY PROFILES',
   abort: 'ABORTED ENGINE START',
   drymot: 'DRY MOTORING RUN',
@@ -2116,6 +2411,86 @@ function initCalcTools() {
   document.querySelectorAll('[data-calc-tool-host]').forEach(mountCalcToolHost);
 }
 
+function sanitizeLabel(text) {
+  return (text || '').replace(/\s+/g, ' ').trim();
+}
+
+function getCurrentSectionTitle() {
+  const labelEl = document.getElementById('section-label');
+  return sanitizeLabel(labelEl ? labelEl.textContent : '');
+}
+
+function getVisibleSubsections(panel, contentRect) {
+  return Array.from(panel.querySelectorAll('.cl-section')).filter((section) => {
+    const rect = section.getBoundingClientRect();
+    const intersects = rect.bottom > contentRect.top + 6 && rect.top < contentRect.bottom - 6;
+    return intersects;
+  });
+}
+
+function pickOperationalSubsection(panel) {
+  const content = document.getElementById('content');
+  if (!panel || !content) return null;
+  const contentRect = content.getBoundingClientRect();
+  const visible = getVisibleSubsections(panel, contentRect);
+  const candidates = visible.length ? visible : Array.from(panel.querySelectorAll('.cl-section'));
+  if (!candidates.length) return null;
+  const anchorY = contentRect.top + 70;
+  let best = candidates[0];
+  let bestScore = Number.POSITIVE_INFINITY;
+  candidates.forEach((section) => {
+    const r = section.getBoundingClientRect();
+    const score = Math.abs(r.top - anchorY);
+    if (score < bestScore) {
+      bestScore = score;
+      best = section;
+    }
+  });
+  return best;
+}
+
+function subsectionTitle(section) {
+  if (!section) return 'GENERAL';
+  const header = section.querySelector('.cl-section-header');
+  if (!header) return 'GENERAL';
+  const clone = header.cloneNode(true);
+  clone.querySelectorAll('.sub-note').forEach((el) => el.remove());
+  return sanitizeLabel(clone.textContent || 'GENERAL');
+}
+
+function subsectionCounts(section, panel) {
+  const scope = section || panel;
+  if (!scope) return { checked: 0, total: 0, percent: 0 };
+  const rows = scope.querySelectorAll('tr[onclick]');
+  const checkedRows = scope.querySelectorAll('tr.checked[onclick]');
+  const total = rows.length;
+  const checked = checkedRows.length;
+  return {
+    checked,
+    total,
+    percent: total ? Math.round((checked / total) * 100) : 0
+  };
+}
+
+function updateOperationalIndicator() {
+  const breadcrumbEl = document.getElementById('op-breadcrumb');
+  const countEl = document.getElementById('op-count');
+  const fillEl = document.getElementById('op-progress-fill');
+  const trackEl = document.querySelector('.op-progress-track');
+  if (!breadcrumbEl || !countEl || !fillEl || !trackEl) return;
+
+  const panel = document.querySelector('.section-panel.active');
+  const section = getCurrentSectionTitle() || 'SECCIÓN';
+  const subsection = pickOperationalSubsection(panel);
+  const subTitle = subsectionTitle(subsection);
+  const counts = subsectionCounts(subsection, panel);
+
+  breadcrumbEl.textContent = `${section} > ${subTitle}`;
+  countEl.textContent = `${counts.checked}/${counts.total} ítems`;
+  fillEl.style.width = `${counts.percent}%`;
+  trackEl.setAttribute('aria-valuenow', String(counts.percent));
+}
+
 function renderVersionInfo() {
   const versionEl = document.getElementById('version-display');
   if (!versionEl) return;
@@ -2176,6 +2551,25 @@ async function maybeShowWhatsNew() {
   modal.setAttribute('aria-hidden', 'false');
 }
 
+function getActionScope(id) {
+  const panel = document.getElementById('panel-' + id);
+  if (!panel) return null;
+  if (id !== 'safety') return panel;
+  return panel.querySelector('.safety-brief-pane.active') || panel;
+}
+
+function setSafetyBriefing(briefId) {
+  const panel = document.getElementById('panel-safety');
+  if (!panel) return;
+  panel.querySelectorAll('.safety-brief-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.brief === briefId);
+  });
+  panel.querySelectorAll('.safety-brief-pane').forEach((pane) => {
+    pane.classList.toggle('active', pane.dataset.brief === briefId);
+  });
+  updateProgress('safety');
+}
+
 function show(id) {
   document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -2183,7 +2577,12 @@ function show(id) {
   document.getElementById('btn-' + id).classList.add('active');
   document.getElementById('section-label').textContent = labels[id];
   if (id === 'pac') setTimeout(initCalcTools, 50);
+  if (id === 'safety') {
+    const active = document.querySelector('#panel-safety .safety-brief-btn.active');
+    setSafetyBriefing(active ? active.dataset.brief : 'mission');
+  }
   updateProgress(id);
+  updateOperationalIndicator();
 }
 
 function toggle(row) {
@@ -2195,13 +2594,16 @@ function toggle(row) {
 
 function updateProgress(id) {
   const panel = document.getElementById('panel-' + id);
-  const allClickable = panel.querySelectorAll('tr[onclick]');
-  const checked = panel.querySelectorAll('tr.checked');
+  if (!panel) return;
+  const scope = getActionScope(id) || panel;
+  const allClickable = scope.querySelectorAll('tr[onclick]');
+  const checked = scope.querySelectorAll('tr.checked[onclick]');
   const pct = allClickable.length ? (checked.length / allClickable.length * 100) : 0;
   const fill = document.getElementById('prog-' + id);
   const lbl = document.getElementById('label-' + id);
   if (fill) fill.style.width = pct + '%';
   if (lbl) lbl.textContent = checked.length + ' / ' + allClickable.length;
+  updateOperationalIndicator();
 }
 
 function updateProgressForSection(id) {
@@ -2213,8 +2615,9 @@ function updateProgressForSection(id) {
 }
 
 function resetSection(id) {
-  const panel = document.getElementById('panel-' + id);
-  panel.querySelectorAll('tr.checked').forEach(r => r.classList.remove('checked'));
+  const scope = getActionScope(id);
+  if (!scope) return;
+  scope.querySelectorAll('tr.checked[onclick]').forEach(r => r.classList.remove('checked'));
   updateProgress(id);
 }
 
@@ -2233,8 +2636,9 @@ function repeatReset(row, id, from, to) {
 }
 
 function checkAll(id) {
-  const panel = document.getElementById('panel-' + id);
-  panel.querySelectorAll('tr[onclick]').forEach(r => r.classList.add('checked'));
+  const scope = getActionScope(id);
+  if (!scope) return;
+  scope.querySelectorAll('tr[onclick]').forEach(r => r.classList.add('checked'));
   updateProgress(id);
 }
 // -------------------------------------------------------
@@ -2714,6 +3118,7 @@ function contTab(mode, key, sub) {
   const paneEl = document.getElementById(`${panePrefix}${sub}-${key}`);
   if (tabEl)  tabEl.classList.add('active');
   if (paneEl) paneEl.classList.add('active');
+  updateOperationalIndicator();
 }
 
 function profTab(tab) {
@@ -2721,10 +3126,11 @@ function profTab(tab) {
   document.getElementById('prof-ldg').style.display = tab === 'ldg' ? 'block' : 'none';
   document.getElementById('ptab-to').classList.toggle('active',  tab === 'to');
   document.getElementById('ptab-ldg').classList.toggle('active', tab === 'ldg');
+  updateOperationalIndicator();
 }
 
-function selectTO(key)  { renderTO(key);  }
-function selectLDG(key) { renderLDG(key); }
+function selectTO(key)  { renderTO(key); updateOperationalIndicator(); }
+function selectLDG(key) { renderLDG(key); updateOperationalIndicator(); }
 
 // --- SPLASH SCREEN DISMISS ---
 window.addEventListener('load', () => {
@@ -2825,14 +3231,100 @@ function toggleNVG() {
   }
 }
 
+const UI_PREF_KEY = 'aw139-ui-prefs-v1';
+const UI_DEFAULTS = Object.freeze({ font: 100, row: 100 });
+
+function clampUI(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function readUIPrefs() {
+  try {
+    const raw = localStorage.getItem(UI_PREF_KEY);
+    if (!raw) return { ...UI_DEFAULTS };
+    const parsed = JSON.parse(raw);
+    return {
+      font: clampUI(Number(parsed.font) || UI_DEFAULTS.font, 85, 125),
+      row: clampUI(Number(parsed.row) || UI_DEFAULTS.row, 85, 135)
+    };
+  } catch (_) {
+    return { ...UI_DEFAULTS };
+  }
+}
+
+function applyUIPrefs(prefs) {
+  const font = clampUI(Number(prefs.font) || UI_DEFAULTS.font, 85, 125);
+  const row = clampUI(Number(prefs.row) || UI_DEFAULTS.row, 85, 135);
+
+  document.documentElement.style.setProperty('--ui-font-scale', (font / 100).toFixed(2));
+  document.documentElement.style.setProperty('--ui-row-scale', (row / 100).toFixed(2));
+
+  const fontValue = document.getElementById('ui-font-value');
+  const rowValue = document.getElementById('ui-row-value');
+  if (fontValue) fontValue.textContent = `${font}%`;
+  if (rowValue) rowValue.textContent = `${row}%`;
+}
+
+function saveUIPrefs(prefs) {
+  localStorage.setItem(UI_PREF_KEY, JSON.stringify({
+    font: clampUI(Number(prefs.font) || UI_DEFAULTS.font, 85, 125),
+    row: clampUI(Number(prefs.row) || UI_DEFAULTS.row, 85, 135)
+  }));
+}
+
+function initUIPrefs() {
+  const fontRange = document.getElementById('ui-font-range');
+  const rowRange = document.getElementById('ui-row-range');
+  const resetBtn = document.getElementById('ui-reset-btn');
+  if (!fontRange || !rowRange || !resetBtn) {
+    applyUIPrefs(UI_DEFAULTS);
+    return;
+  }
+
+  const current = readUIPrefs();
+  fontRange.value = String(current.font);
+  rowRange.value = String(current.row);
+  applyUIPrefs(current);
+
+  const onInput = () => {
+    const next = { font: Number(fontRange.value), row: Number(rowRange.value) };
+    applyUIPrefs(next);
+    saveUIPrefs(next);
+  };
+
+  fontRange.addEventListener('input', onInput);
+  rowRange.addEventListener('input', onInput);
+  resetBtn.addEventListener('click', () => {
+    fontRange.value = String(UI_DEFAULTS.font);
+    rowRange.value = String(UI_DEFAULTS.row);
+    applyUIPrefs(UI_DEFAULTS);
+    saveUIPrefs(UI_DEFAULTS);
+  });
+}
+
 // Restaurar modo guardado al cargar
 (function initMode() {
   const saved = localStorage.getItem('aw139-mode') || MODES.NIGHT;
   applyMode(saved);
 })();
 
+initUIPrefs();
+
 // Init progress
 Object.keys(labels).forEach(id => updateProgress(id));
+updateOperationalIndicator();
+
+const contentEl = document.getElementById('content');
+let indicatorRaf = 0;
+if (contentEl) {
+  contentEl.addEventListener('scroll', () => {
+    if (indicatorRaf) return;
+    indicatorRaf = requestAnimationFrame(() => {
+      indicatorRaf = 0;
+      updateOperationalIndicator();
+    });
+  }, { passive: true });
+}
 
 // Update banner control
 const updateBanner = document.getElementById('update-banner');
@@ -2906,4 +3398,3 @@ if ('serviceWorker' in navigator) {
 <script src="app.js"></script>
 </body>
 </html>
-
