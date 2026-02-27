@@ -2042,6 +2042,21 @@ const CALC_TOOL_REGISTRY = {
   }
 };
 
+function getCurrentModeForIframes() {
+  return localStorage.getItem('aw139-mode') || 'night';
+}
+
+function broadcastModeToCalcFrames(mode) {
+  const next = mode || getCurrentModeForIframes();
+  document.querySelectorAll('iframe[id^="calc-frame-"]').forEach((frame) => {
+    try {
+      frame.contentWindow?.postMessage({ type: 'AW139_MODE', mode: next }, '*');
+    } catch (err) {
+      // Ignore and continue with remaining frames.
+    }
+  });
+}
+
 function mountCalcToolHost(host) {
   if (!host) return;
   const toolId = host.dataset.toolId;
@@ -2061,8 +2076,11 @@ function mountCalcToolHost(host) {
   frame.style.width = '100%';
   frame.style.height = tool.height;
   frame.style.border = '1px solid var(--pac-panel-border)';
-  frame.style.borderRadius = '8px';
-  frame.style.background = '#0b0f14';
+  frame.style.borderRadius = '2px';
+  frame.style.background = 'var(--pac-canvas-bg)';
+  frame.addEventListener('load', () => {
+    broadcastModeToCalcFrames(getCurrentModeForIframes());
+  });
   host.innerHTML = '';
   host.appendChild(frame);
   host.dataset.mounted = '1';
@@ -2697,6 +2715,7 @@ function applyMode(mode) {
   }
 
   localStorage.setItem('aw139-mode', mode);
+  broadcastModeToCalcFrames(mode);
 }
 
 function toggleMode() {
@@ -2780,9 +2799,6 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-
-
-
 
 
 
