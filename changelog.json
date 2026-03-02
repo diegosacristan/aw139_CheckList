@@ -1,5 +1,10 @@
 ﻿{
     "versions": {
+        "1.1.8": [
+            "Se forzó la actualización del Service Worker mediante cambio de firma interna (byte-check).",
+            "Se implementó estrategia Network-First para archivos core (index.html, config.js) para evitar bloqueos de caché en el futuro.",
+            "Actualización mandatoria para sincronizar cambios en dispositivos iPad con PWA instalada."
+        ],
         "1.1.7": [
             "Se corrigió el error de escalado (0.79x) que causaba el desfase visual en la carta PAC.",
             "Se eliminó lógica legacy incompatible con la resolución actual de la imagen.",

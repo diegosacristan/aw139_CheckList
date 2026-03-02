@@ -1,4 +1,6 @@
 // AW139 Checklist - Service Worker
+// SW_VERSION: 1.1.8
+
 // Cache version is driven by APP_VERSION via sw.js?v=<app-version>
 
 const swUrl = new URL(self.location.href);
@@ -54,6 +56,24 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  const isRoot = url.pathname === '/' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/config.js');
+
+  if (isRoot) {
+    // Network-first for core files to ensure we get the latest SW registration
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (!response || response.status !== 200) return response;
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
