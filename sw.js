@@ -1,10 +1,18 @@
-// AW139 Checklist — Service Worker
-// Repositorio: https://github.com/diegosacristan/aw139_CheckList
+// AW139 Checklist - Service Worker
+// Cache version is driven by APP_VERSION via sw.js?v=<app-version>
 
-const CACHE_NAME = 'aw139-qrh-v11';
+const swUrl = new URL(self.location.href);
+const APP_VERSION = swUrl.searchParams.get('v') || 'dev';
+const CACHE_PREFIX = 'aw139-qrh';
+const CACHE_NAME = `${CACHE_PREFIX}-v${APP_VERSION}`;
+
 const ASSETS = [
   './',
   './index.html',
+  './config.js',
+  './changelog.json',
+  './styles.css',
+  './app.js',
   './manifest.json',
   './favicon.ico',
   './favicon-16x16.png',
@@ -14,63 +22,67 @@ const ASSETS = [
   './apple-touch-icon.png',
   './imagen.jpeg',
   './instalacion_qr_v2.html',
-  // Módulo PAC
+  // PAC module
   './pac/index.html',
   './pac/app.js',
   './pac/styles.css',
   './pac/aw139_pac_chart_config.js',
-  './pac/power_assurance_chart.png'
+  './pac/power_assurance_chart.png',
+  // Safety references integrated in main index
+  './assets/briefings/facdee_01.jpeg',
+  './assets/briefings/debriefing_tem.jpeg',
+  './assets/briefings/airmanship_tem.jpeg'
 ];
 
-// INSTALL — guardar en caché
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
-// ACTIVATE — limpiar cachés viejas
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
+    caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
+          .filter((key) => key.startsWith(`${CACHE_PREFIX}-`) && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
   );
 });
 
-// FETCH — servir desde caché, fallback a red
-self.addEventListener('fetch', event => {
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(event.request)
-      .then(cached => {
-        if (cached) return cached;
-        return fetch(event.request)
-          .then(response => {
-            // Cachear fuentes de Google dinámicamente
-            if (event.request.url.includes('fonts.googleapis') ||
-                event.request.url.includes('fonts.gstatic')) {
-              const clone = response.clone();
-              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-            }
-            return response;
-          })
-          .catch(() => {
-            // Offline fallback
-            if (event.request.destination === 'document') {
-              return caches.match('./index.html');
-            }
-          });
-      })
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(event.request)
+        .then((response) => {
+          if (!response || response.status !== 200) return response;
+
+          if (
+            event.request.url.includes('fonts.googleapis') ||
+            event.request.url.includes('fonts.gstatic')
+          ) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => {
+          if (event.request.destination === 'document') {
+            return caches.match('./index.html');
+          }
+          return undefined;
+        });
+    })
   );
 });
 
-// Permitir que la app active una nueva versión al instante
-self.addEventListener('message', event => {
+self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }

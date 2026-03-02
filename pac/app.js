@@ -8,6 +8,7 @@
   const CHART_IMAGE_SRC = qs.get('chart') || window.CHART_IMAGE || 'power_assurance_chart.png';
   const DEFAULT_CONFIG_VAR = qs.get('configVar') || 'AW139_PAC_DEFAULT_CONFIG';
   const CONFIG_JSON_URL = qs.get('config') || '';
+  const LEGACY_COORD_SCALE = 0.79;
 
   const canvas = document.getElementById('chartCanvas');
   const ctx = canvas.getContext('2d');
@@ -47,6 +48,8 @@
     lineStatus: document.getElementById('lineStatus'),
     btnExport: document.getElementById('btnExport'),
     fileImport: document.getElementById('fileImport'),
+    decisionBanner: document.getElementById('decisionBanner'),
+    sidebarSheetToggle: document.getElementById('sidebarSheetToggle'),
   };
 
   // ---------- state ----------
@@ -57,6 +60,7 @@
   const READINGS_STORAGE_KEY = `aw139_${APP_MODULE}_readings_v1`;
   let config = normalizeConfig(loadConfig()) || emptyConfig();
   let img = new Image();
+  let imageLoadError = null;
   img.src = CHART_IMAGE_SRC;
 
   // view transform
@@ -71,6 +75,14 @@
     warnings: [],
     computed: null
   };
+  let decisionBannerTimer = null;
+  let touchGesture = {
+    mode: 'none',
+    lastMid: null,
+    lastDist: 0,
+  };
+  let mobileSheetCollapsed = false;
+  let mobileSheetTouched = false;
 
   // calibration mode
   let calMode = false;
@@ -79,10 +91,48 @@
   let calClicks = []; // raw image coords clicks for current step
   const steps = buildSteps(); // list of {id, title, help, kind}
   const lineFamilyMeta = {
-    altitude: { label: 'ALT', unit: 'ft', color: 'rgba(93,181,255,0.95)' },
-    oat_itt: { label: 'OAT ITT', unit: 'C', color: 'rgba(255,187,88,0.95)' },
-    oat_ng: { label: 'OAT NG', unit: 'C', color: 'rgba(127,224,145,0.95)' },
+    altitude: { label: 'ALT', unit: 'ft', colorVar: '--pac-line-altitude', fallback: 'rgba(122,176,255,0.95)' },
+    oat_itt: { label: 'OAT ITT', unit: 'C', colorVar: '--pac-line-oat-itt', fallback: 'rgba(255,185,64,0.95)' },
+    oat_ng: { label: 'OAT NG', unit: 'C', colorVar: '--pac-line-oat-ng', fallback: 'rgba(74,223,112,0.95)' },
   };
+
+  const MODES = { NIGHT: 'night', DAY: 'day', NVG: 'nvg' };
+
+  function normalizeMode(mode) {
+    if (mode === MODES.DAY || mode === MODES.NVG || mode === MODES.NIGHT) return mode;
+    if (mode === 'day' || mode === 'nvg' || mode === 'night') return mode;
+    return MODES.NIGHT;
+  }
+
+  function applyMode(mode) {
+    const next = normalizeMode(mode);
+    const root = document.documentElement;
+    root.removeAttribute('data-mode');
+    if (next === MODES.DAY) root.setAttribute('data-mode', 'day');
+    if (next === MODES.NVG) root.setAttribute('data-mode', 'nvg');
+    draw();
+  }
+
+  function syncModeFromHost() {
+    let mode = null;
+    try {
+      mode = window.parent?.localStorage?.getItem('aw139-mode');
+    } catch (err) {
+      mode = null;
+    }
+    if (!mode) {
+      try {
+        const hostMode = window.parent?.document?.documentElement?.getAttribute('data-mode');
+        mode = hostMode === 'day' || hostMode === 'nvg' ? hostMode : MODES.NIGHT;
+      } catch (err) {
+        mode = null;
+      }
+    }
+    if (!mode) {
+      mode = localStorage.getItem('aw139-mode') || MODES.NIGHT;
+    }
+    applyMode(mode);
+  }
 
   // ---------- helpers ----------
   function emptyConfig() {
@@ -124,7 +174,6 @@
 
     const fixLine = (line) => {
       if (!line || !line.p1 || !line.p2) return line;
-      if (Number.isFinite(line.m)) return line;
       const x1 = line.p1[0], y1 = line.p1[1];
       const x2 = line.p2[0], y2 = line.p2[1];
       const dx = x2 - x1;
@@ -134,11 +183,12 @@
       return { ...line, points, m, b, vertical: (m === Infinity), x_const: (m === Infinity ? x1 : null) };
     };
 
-    const fixLines = (lines) => (lines || []).map(fixLine).filter(Boolean).sort((a,b)=>a.value-b.value);
+    const fixLines = (lines) => (lines || []).map(fixLine).filter(Boolean).sort((a, b) => a.value - b.value);
 
     const normalized = {
       version: cfg.version || base.version,
       image: cfg.image || base.image,
+      meta: cfg.meta || {},
       panels: {
         p1: { ...base.panels.p1, ...(safePanels.p1 || {}) },
         itt: { ...base.panels.itt, ...(safePanels.itt || {}) },
@@ -162,6 +212,106 @@
 
     return normalized;
   }
+
+  function scalePoint(pt, scale) {
+    if (!pt || pt.length < 2) return pt;
+    return [pt[0] * scale, pt[1] * scale];
+  }
+
+  function scaleLine(line, scale) {
+    if (!line) return line;
+    const points = Array.isArray(line.points) ? line.points.map((pt) => scalePoint(pt, scale)) : null;
+    return {
+      ...line,
+      p1: scalePoint(line.p1, scale),
+      p2: scalePoint(line.p2, scale),
+      points,
+      m: undefined,
+      b: undefined,
+      x_const: undefined,
+    };
+  }
+
+  function scaleConfigCoords(cfg, scale) {
+    if (!cfg || !Number.isFinite(scale) || scale <= 0) return cfg;
+    const p1 = cfg?.panels?.p1?.bbox || null;
+    const itt = cfg?.panels?.itt?.bbox || null;
+    const ng = cfg?.panels?.ng?.bbox || null;
+    return {
+      ...cfg,
+      panels: {
+        ...cfg.panels,
+        p1: { ...(cfg.panels?.p1 || {}), bbox: p1 ? p1.map((v) => v * scale) : p1 },
+        itt: { ...(cfg.panels?.itt || {}), bbox: itt ? itt.map((v) => v * scale) : itt },
+        ng: { ...(cfg.panels?.ng || {}), bbox: ng ? ng.map((v) => v * scale) : ng },
+      },
+      axes: {
+        ...cfg.axes,
+        p1_x: cfg.axes?.p1_x ? { ...cfg.axes.p1_x, p1: scalePoint(cfg.axes.p1_x.p1, scale), p2: scalePoint(cfg.axes.p1_x.p2, scale) } : cfg.axes?.p1_x,
+        itt_x: cfg.axes?.itt_x ? { ...cfg.axes.itt_x, p1: scalePoint(cfg.axes.itt_x.p1, scale), p2: scalePoint(cfg.axes.itt_x.p2, scale) } : cfg.axes?.itt_x,
+        ng_x: cfg.axes?.ng_x ? { ...cfg.axes.ng_x, p1: scalePoint(cfg.axes.ng_x.p1, scale), p2: scalePoint(cfg.axes.ng_x.p2, scale) } : cfg.axes?.ng_x,
+      },
+      lines: {
+        ...cfg.lines,
+        altitude: (cfg.lines?.altitude || []).map((line) => scaleLine(line, scale)),
+        oat_itt: (cfg.lines?.oat_itt || []).map((line) => scaleLine(line, scale)),
+        oat_ng: (cfg.lines?.oat_ng || []).map((line) => scaleLine(line, scale)),
+      },
+    };
+  }
+
+  function maybeAutoScaleLegacyConfigToImage() {
+    if (!img?.complete || !config) return false;
+    if (config?.meta?.legacyScaledForImage) return false;
+    const p1 = config?.panels?.p1?.bbox;
+    const ng = config?.panels?.ng?.bbox;
+    if (!p1 || !ng) return false;
+
+    const looksLegacy =
+      (ng[2] > img.width * 1.03) &&
+      (p1[1] > img.height * 0.5);
+
+    if (!looksLegacy) return false;
+
+    const scaledRaw = scaleConfigCoords(config, LEGACY_COORD_SCALE);
+    const normalizedScaled = normalizeConfig({
+      ...scaledRaw,
+      meta: {
+        ...(scaledRaw.meta || {}),
+        legacyScaledForImage: `${img.width}x${img.height}`,
+        legacyScaleFactor: LEGACY_COORD_SCALE,
+      },
+    });
+    if (!normalizedScaled) return false;
+
+    config = normalizedScaled;
+    saveConfig();
+    return true;
+  }
+
+  // Corrige una calibración histórica incorrecta del eje ITT (400..900 -> 500..800).
+  function maybeAutoFixIttAxisRange() {
+    const itt = config?.axes?.itt_x;
+    if (!itt || !Number.isFinite(itt.v1) || !Number.isFinite(itt.v2)) return false;
+
+    const min = Math.min(itt.v1, itt.v2);
+    const max = Math.max(itt.v1, itt.v2);
+    const looksLegacyIttRange = Math.abs(min - 400) < 1e-6 && Math.abs(max - 900) < 1e-6;
+    if (!looksLegacyIttRange) return false;
+
+    const ascending = itt.v2 >= itt.v1;
+    itt.v1 = ascending ? 500 : 800;
+    itt.v2 = ascending ? 800 : 500;
+    config.meta = {
+      ...(config.meta || {}),
+      ittAxisAutoFixed: new Date().toISOString(),
+      ittAxisPreviousRange: '400-900',
+      ittAxisCurrentRange: '500-800',
+    };
+    saveConfig();
+    return true;
+  }
+
 
   function loadConfig() {
     try {
@@ -256,9 +406,10 @@
     const ts = dt && !Number.isNaN(dt.getTime())
       ? dt.toLocaleString()
       : 'sin fecha';
-    const name = item?.name || 'Lectura';
-    const eng = item?.inputs?.engine || '?';
-    return `${name} | ENG ${eng} | ${ts}`;
+    const name = escapeHtml(item?.name || 'Lectura');
+    const eng = escapeHtml(item?.inputs?.engine || '?');
+    const safeTs = escapeHtml(ts);
+    return `${name} | ENG ${eng} | ${safeTs}`;
   }
 
   function refreshReadingsUI() {
@@ -294,6 +445,10 @@
   }
 
   function refreshStatus() {
+    if (imageLoadError) {
+      statusText.textContent = `ERROR CARTA: ${imageLoadError}`;
+      return;
+    }
     const ready = isReady();
     statusText.textContent = ready ? 'CALIBRACIÓN - OK: cálculos habilitados.' : 'Sin calibración completa: entra a “Admin / Calibración”.';
   }
@@ -309,6 +464,15 @@
   }
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  function cssVar(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+
+  function canvasFont(px, weight = 600) {
+    return `${weight} ${px}px "Share Tech Mono", monospace`;
+  }
 
   function axisKey(panelKey) {
     if (panelKey === 'p1') return 'p1_x';
@@ -338,6 +502,18 @@
     return { min, max };
   }
 
+  function clampPointToPanel(panelKey, x, y) {
+    const bbox = config.panels[panelKey]?.bbox;
+    if (!bbox) return { x, y, clamped: false };
+    const minX = Math.min(bbox[0], bbox[2]);
+    const maxX = Math.max(bbox[0], bbox[2]);
+    const minY = Math.min(bbox[1], bbox[3]);
+    const maxY = Math.max(bbox[1], bbox[3]);
+    const cx = clamp(x, minX, maxX);
+    const cy = clamp(y, minY, maxY);
+    return { x: cx, y: cy, clamped: (cx !== x || cy !== y) };
+  }
+
   function inRange(v, min, max) {
     return v >= min && v <= max;
   }
@@ -358,10 +534,18 @@
   }
 
   function draw() {
-    if (!img.complete) return;
+    const w = canvas.width / devicePixelRatio;
+    const h = canvas.height / devicePixelRatio;
 
     // clear
-    ctx.clearRect(0, 0, canvas.width / devicePixelRatio, canvas.height / devicePixelRatio);
+    ctx.clearRect(0, 0, w, h);
+
+    if (imageLoadError) {
+      drawImageError(w, h);
+      return;
+    }
+
+    if (!img.complete) return;
 
     // draw chart
     ctx.save();
@@ -379,21 +563,50 @@
     drawOverlay();
   }
 
+  // Dibuja un mensaje operacional cuando la carta no se puede cargar.
+  function drawImageError(w, h) {
+    const pad = 18;
+    const boxW = Math.max(320, Math.min(w - 24, 680));
+    const boxH = 120;
+    const x = (w - boxW) / 2;
+    const y = (h - boxH) / 2;
+
+    ctx.save();
+    ctx.fillStyle = cssVar('--pac-hud-bg', 'rgba(16, 24, 36, 0.9)');
+    ctx.strokeStyle = cssVar('--pac-bad', '#ff4444');
+    ctx.lineWidth = 2;
+    ctx.fillRect(x, y, boxW, boxH);
+    ctx.strokeRect(x, y, boxW, boxH);
+
+    ctx.fillStyle = cssVar('--pac-bad', '#ff4444');
+    ctx.font = canvasFont(15, 700);
+    ctx.fillText('ERROR DE CARGA DE CARTA PAC', x + pad, y + 30);
+
+    ctx.fillStyle = cssVar('--text', '#eef2ff');
+    ctx.font = canvasFont(12, 600);
+    const msg = imageLoadError || 'No se pudo cargar la imagen.';
+    ctx.fillText(msg, x + pad, y + 58);
+    ctx.fillStyle = cssVar('--dim', '#8a96b0');
+    ctx.font = canvasFont(11, 500);
+    ctx.fillText('Verifica ruta, disponibilidad offline y parámetro ?chart=.', x + pad, y + 84);
+    ctx.restore();
+  }
+
   function drawOverlay() {
     const w = canvas.width / devicePixelRatio;
     const h = canvas.height / devicePixelRatio;
 
     // segments
     ctx.save();
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 6]);
 
     for (const s of overlay.segments) {
       const a = toCanvas(s.a), b = toCanvas(s.b);
+      ctx.lineWidth = Number.isFinite(s.width) ? s.width : 2;
+      ctx.setLineDash(Array.isArray(s.dash) ? s.dash : [6, 6]);
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
-      ctx.strokeStyle = s.style || 'rgba(255,80,80,0.9)';
+      ctx.strokeStyle = s.style || cssVar('--pac-overlay-point-stroke', 'rgba(255,80,80,0.9)');
       ctx.stroke();
     }
     ctx.restore();
@@ -401,12 +614,13 @@
     // points
     for (const p of overlay.points) {
       const c = toCanvas(p);
+      const radius = Number.isFinite(p.radius) ? p.radius : 5;
       ctx.beginPath();
-      ctx.arc(c.x, c.y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = p.fill || cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)');
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,80,80,0.95)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = p.stroke || cssVar('--pac-overlay-point-stroke', 'rgba(255,80,80,0.95)');
+      ctx.lineWidth = Number.isFinite(p.width) ? p.width : 2;
       ctx.stroke();
       if (p.label) {
         drawLabel(p.label, c.x + 8, c.y - 2);
@@ -415,7 +629,7 @@
 
     // warnings in HUD
     if (overlay.warnings.length) {
-      hudText.innerHTML = overlay.warnings.map(w => `âš ï¸ ${escapeHtml(w)}`).join('<br/>');
+      hudText.innerHTML = overlay.warnings.map(w => `[!] ${escapeHtml(w)}`).join('<br/>');
     } else {
       hudText.textContent = calMode
         ? 'Modo Admin Activo'
@@ -432,15 +646,15 @@
   function drawLabel(text, x, y) {
     const padX = 5;
     const padY = 3;
-    ctx.font = '11px system-ui';
+    ctx.font = canvasFont(10, 600);
     const w = ctx.measureText(text).width + padX * 2;
     const h = 16;
-    ctx.fillStyle = 'rgba(245,249,255,0.82)';
+    ctx.fillStyle = cssVar('--pac-label-bg', 'rgba(245,249,255,0.82)');
     ctx.fillRect(x, y - h + 2, w, h);
-    ctx.strokeStyle = 'rgba(26,37,51,0.45)';
+    ctx.strokeStyle = cssVar('--pac-label-border', 'rgba(26,37,51,0.45)');
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y - h + 2, w, h);
-    ctx.fillStyle = 'rgba(11,15,20,0.95)';
+    ctx.fillStyle = cssVar('--pac-label-text', 'rgba(11,15,20,0.95)');
     ctx.fillText(text, x + padX, y - padY);
   }
 
@@ -479,16 +693,17 @@
   function drawSavedLineFamily(family) {
     const meta = lineFamilyMeta[family];
     if (!meta) return;
+    const color = cssVar(meta.colorVar, meta.fallback);
     const lines = config.lines[family] || [];
     lines.forEach((line) => {
       const pts = lineToPoints(line);
       if (!pts || pts.length < 2) return;
-      drawSavedPolyline(pts, meta.color);
+      drawSavedPolyline(pts, color);
       for (const p of pts) {
         const c = toCanvas({ x: p[0], y: p[1] });
         ctx.beginPath();
         ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = meta.color;
+        ctx.fillStyle = color;
         ctx.fill();
       }
       const labelPt = pts[Math.floor(pts.length / 2)];
@@ -500,9 +715,10 @@
   function drawSavedCalibrationGeometry() {
     const s = currentStep();
     const skipAxis = (s.kind === 'xaxis') ? axisKey(s.panel) : null;
-    if (skipAxis !== 'p1_x') drawSavedAxis('p1_x', 'rgba(255,132,173,0.95)');
-    if (skipAxis !== 'itt_x') drawSavedAxis('itt_x', 'rgba(255,132,173,0.95)');
-    if (skipAxis !== 'ng_x') drawSavedAxis('ng_x', 'rgba(255,132,173,0.95)');
+    const axisColor = cssVar('--pac-axis', 'rgba(255,132,173,0.95)');
+    if (skipAxis !== 'p1_x') drawSavedAxis('p1_x', axisColor);
+    if (skipAxis !== 'itt_x') drawSavedAxis('itt_x', axisColor);
+    if (skipAxis !== 'ng_x') drawSavedAxis('ng_x', axisColor);
     drawSavedLineFamily('altitude');
     drawSavedLineFamily('oat_itt');
     drawSavedLineFamily('oat_ng');
@@ -514,23 +730,23 @@
     ctx.save();
     ctx.lineWidth = 2;
     ctx.setLineDash([8, 4]);
-    ctx.strokeStyle = 'rgba(43,124,255,0.9)';
-    ctx.fillStyle = 'rgba(43,124,255,0.08)';
+    ctx.strokeStyle = cssVar('--pac-overlay-primary', 'rgba(43,124,255,0.9)');
+    ctx.fillStyle = cssVar('--pac-overlay-fill', 'rgba(43,124,255,0.08)');
 
     for (const key of ['p1', 'itt', 'ng']) {
       const bbox = panels[key].bbox;
       if (!bbox) continue;
-      const [x1,y1,x2,y2] = bbox;
-      const a = toCanvas({x:x1,y:y1});
-      const b = toCanvas({x:x2,y:y2});
-      const rx = Math.min(a.x,b.x), ry = Math.min(a.y,b.y);
-      const rw = Math.abs(b.x-a.x), rh = Math.abs(b.y-a.y);
+      const [x1, y1, x2, y2] = bbox;
+      const a = toCanvas({ x: x1, y: y1 });
+      const b = toCanvas({ x: x2, y: y2 });
+      const rx = Math.min(a.x, b.x), ry = Math.min(a.y, b.y);
+      const rw = Math.abs(b.x - a.x), rh = Math.abs(b.y - a.y);
       ctx.fillRect(rx, ry, rw, rh);
       ctx.strokeRect(rx, ry, rw, rh);
-      ctx.fillStyle = 'rgba(232,238,246,0.95)';
-      ctx.font = '12px system-ui';
-      ctx.fillText(key.toUpperCase(), rx+8, ry+16);
-      ctx.fillStyle = 'rgba(43,124,255,0.08)';
+      ctx.fillStyle = cssVar('--pac-overlay-point-fill', 'rgba(232,238,246,0.95)');
+      ctx.font = canvasFont(11, 700);
+      ctx.fillText(key.toUpperCase(), rx + 8, ry + 16);
+      ctx.fillStyle = cssVar('--pac-overlay-fill', 'rgba(43,124,255,0.08)');
     }
 
     ctx.setLineDash([]);
@@ -539,10 +755,10 @@
     // current clicks for step
     for (let i = 0; i < calClicks.length; i++) {
       const pt = calClicks[i];
-      const c = toCanvas({x:pt[0], y:pt[1]});
+      const c = toCanvas({ x: pt[0], y: pt[1] });
       ctx.beginPath();
       ctx.arc(c.x, c.y, 6, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(43,124,255,0.9)';
+      ctx.fillStyle = cssVar('--pac-overlay-primary', 'rgba(43,124,255,0.9)');
       ctx.fill();
       drawLabel(String(i + 1), c.x + 8, c.y + 6);
     }
@@ -550,13 +766,13 @@
     // preview polyline while capturing
     if (calClicks.length > 1) {
       ctx.beginPath();
-      const first = toCanvas({x:calClicks[0][0], y:calClicks[0][1]});
+      const first = toCanvas({ x: calClicks[0][0], y: calClicks[0][1] });
       ctx.moveTo(first.x, first.y);
       for (let i = 1; i < calClicks.length; i++) {
-        const p = toCanvas({x:calClicks[i][0], y:calClicks[i][1]});
+        const p = toCanvas({ x: calClicks[i][0], y: calClicks[i][1] });
         ctx.lineTo(p.x, p.y);
       }
-      ctx.strokeStyle = 'rgba(43,124,255,0.9)';
+      ctx.strokeStyle = cssVar('--pac-overlay-primary', 'rgba(43,124,255,0.9)');
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -565,31 +781,111 @@
   }
 
   function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safe = String(s ?? '');
+    return safe.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function clearDecisionBannerTimer() {
+    if (!decisionBannerTimer) return;
+    clearTimeout(decisionBannerTimer);
+    decisionBannerTimer = null;
+  }
+
+  function hideDecisionBanner() {
+    if (!els.decisionBanner) return;
+    clearDecisionBannerTimer();
+    els.decisionBanner.classList.add('hidden');
+    els.decisionBanner.classList.remove('ok', 'bad', 'note');
+    els.decisionBanner.textContent = '';
+  }
+
+  // Banner operacional GO/NO-GO sobre el canvas.
+  function showDecisionBanner(computed) {
+    if (!els.decisionBanner) return;
+    hideDecisionBanner();
+    let state = 'note';
+    let text = '⚠ NO CONCLUYENTE';
+    if (computed && computed.concluyente && computed.ittOk != null && computed.ngOk != null) {
+      if (computed.ittOk && computed.ngOk) {
+        state = 'ok';
+        text = '✓ DENTRO DE LIMITES';
+      } else {
+        state = 'bad';
+        text = '✗ LIMITE EXCEDIDO';
+      }
+    }
+    els.decisionBanner.classList.remove('hidden');
+    els.decisionBanner.classList.add(state);
+    els.decisionBanner.textContent = text;
+    decisionBannerTimer = setTimeout(() => {
+      hideDecisionBanner();
+    }, 30000);
+  }
+
+  function applyMobileSheetState(collapsed) {
+    mobileSheetCollapsed = !!collapsed;
+    document.body.classList.toggle('sheet-collapsed', mobileSheetCollapsed);
+    if (!els.sidebarSheetToggle) return;
+    els.sidebarSheetToggle.textContent = mobileSheetCollapsed ? 'Mostrar panel' : 'Ocultar panel';
+    els.sidebarSheetToggle.setAttribute('aria-expanded', mobileSheetCollapsed ? 'false' : 'true');
+  }
+
+  // Controla el comportamiento del bottom sheet en móvil (<768px).
+  function syncResponsiveSheet(forceDefault = false) {
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    document.body.classList.toggle('mobile-sheet', isMobile);
+    if (!isMobile) {
+      mobileSheetTouched = false;
+      applyMobileSheetState(false);
+      return;
+    }
+    if (forceDefault || !mobileSheetTouched) {
+      applyMobileSheetState(true);
+      return;
+    }
+    applyMobileSheetState(mobileSheetCollapsed);
   }
 
   // ---------- calibration steps ----------
   function buildSteps() {
     return [
-      { id:'p1_bbox', title:'Panel 1 bbox (TQ vs ALT)', kind:'bbox', panel:'p1',
-        help:'SHIFT+click dos veces: esquina superior-izq y esquina inferior-der del Panel 1.'},
-      { id:'itt_bbox', title:'Panel 2 bbox (Max ITT)', kind:'bbox', panel:'itt',
-        help:'SHIFT+click dos veces: esquina superior-izq y esquina inferior-der del Panel ITT.'},
-      { id:'ng_bbox', title:'Panel 3 bbox (Max NG)', kind:'bbox', panel:'ng',
-        help:'SHIFT+click dos veces: esquina superior-izq y esquina inferior-der del Panel NG.'},
+      {
+        id: 'p1_bbox', title: 'Panel 1 bbox (TQ vs ALT)', kind: 'bbox', panel: 'p1',
+        help: 'SHIFT+click dos veces: esquina superior-izq y esquina inferior-der del Panel 1.'
+      },
+      {
+        id: 'itt_bbox', title: 'Panel 2 bbox (Max ITT)', kind: 'bbox', panel: 'itt',
+        help: 'SHIFT+click dos veces: esquina superior-izq y esquina inferior-der del Panel ITT.'
+      },
+      {
+        id: 'ng_bbox', title: 'Panel 3 bbox (Max NG)', kind: 'bbox', panel: 'ng',
+        help: 'SHIFT+click dos veces: esquina superior-izq y esquina inferior-der del Panel NG.'
+      },
 
-      { id:'p1_xaxis', title:'Eje X Panel 1 (TQ)', kind:'xaxis', panel:'p1',
-        help:'Define 2 puntos sobre el eje X (TQ) + escribe el valor real de cada punto. secuencia: click punto1, escribe v1, click punto2, escribe v2.'},
-      { id:'itt_xaxis', title:'Eje X Panel ITT (Max ITT)', kind:'xaxis', panel:'itt',
-        help:'Igual: 2 puntos del eje X en ITT + valores reales (°C).'},
-      { id:'ng_xaxis', title:'Eje X Panel NG (Max NG)', kind:'xaxis', panel:'ng',
-        help:'Igual: 2 puntos del eje X en NG + valores reales (%).'},
-      { id:'alt_line', title:'Agregar línea ALT (Panel 1)', kind:'line', family:'altitude',
-        help:'Escribe ALT (ft) en Altura. Luego captura Múltiples puntos sobre la misma línea (de izquierda a derecha) y pulsa “Guardar línea”. Mínimo 2 puntos.'},
-      { id:'oat_itt_line', title:'Agregar línea OAT (Panel ITT)', kind:'line', family:'oat_itt',
-        help:'Escribe OAT (°C). Luego captura múltiples puntos sobre la misma línea (de izquierda a derecha) y pulsa “Guardar línea”. Mínimo 2 puntos.'},
-      { id:'oat_ng_line', title:'Agregar línea OAT (Panel NG)', kind:'line', family:'oat_ng',
-        help:'Escribe OAT (°C). Luego captura múltiples puntos sobre la misma línea (de izquierda a derecha) y pulsa “Guardar línea”. Mínimo 2 puntos.'},
+      {
+        id: 'p1_xaxis', title: 'Eje X Panel 1 (TQ)', kind: 'xaxis', panel: 'p1',
+        help: 'Define 2 puntos sobre el eje X (TQ) + escribe el valor real de cada punto. secuencia: click punto1, escribe v1, click punto2, escribe v2.'
+      },
+      {
+        id: 'itt_xaxis', title: 'Eje X Panel ITT (Max ITT)', kind: 'xaxis', panel: 'itt',
+        help: 'Igual: 2 puntos del eje X en ITT + valores reales (°C).'
+      },
+      {
+        id: 'ng_xaxis', title: 'Eje X Panel NG (Max NG)', kind: 'xaxis', panel: 'ng',
+        help: 'Igual: 2 puntos del eje X en NG + valores reales (%).'
+      },
+      {
+        id: 'alt_line', title: 'Agregar línea ALT (Panel 1)', kind: 'line', family: 'altitude',
+        help: 'Escribe ALT (ft) en Altura. Luego captura Múltiples puntos sobre la misma línea (de izquierda a derecha) y pulsa “Guardar línea”. Mínimo 2 puntos.'
+      },
+      {
+        id: 'oat_itt_line', title: 'Agregar línea OAT (Panel ITT)', kind: 'line', family: 'oat_itt',
+        help: 'Escribe OAT (°C). Luego captura múltiples puntos sobre la misma línea (de izquierda a derecha) y pulsa “Guardar línea”. Mínimo 2 puntos.'
+      },
+      {
+        id: 'oat_ng_line', title: 'Agregar línea OAT (Panel NG)', kind: 'line', family: 'oat_ng',
+        help: 'Escribe OAT (°C). Luego captura múltiples puntos sobre la misma línea (de izquierda a derecha) y pulsa “Guardar línea”. Mínimo 2 puntos.'
+      },
     ];
   }
 
@@ -598,7 +894,7 @@
     steps.forEach((s, i) => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = `${i+1}. ${s.title}`;
+      opt.textContent = `${i + 1}. ${s.title}`;
       els.calStep.appendChild(opt);
     });
   }
@@ -771,7 +1067,7 @@
       overlay.warnings = [];
       calClicks.push([imgPt.x, imgPt.y]);
       if (calClicks.length === 2) {
-        const [a,b] = calClicks;
+        const [a, b] = calClicks;
         config.panels[s.panel].bbox = [a[0], a[1], b[0], b[1]];
         saveConfig();
         clearStepClicks();
@@ -784,7 +1080,7 @@
     // x-axis flow is strict: p1 -> set v1 -> p2 -> set v2
     if (s.kind === 'xaxis') {
       overlay.warnings = [];
-      if (!s._stash) s._stash = { p1:null, v1:null, p2:null, v2:null };
+      if (!s._stash) s._stash = { p1: null, v1: null, p2: null, v2: null };
       const st = s._stash;
 
       if (!st.p1) {
@@ -838,7 +1134,7 @@
       return;
     }
     if (s.kind === 'xaxis') {
-      if (!s._stash) s._stash = { p1:null, v1:null, p2:null, v2:null };
+      if (!s._stash) s._stash = { p1: null, v1: null, p2: null, v2: null };
       const st = s._stash;
       const v = Number(els.calValue.value);
       if (!Number.isFinite(v)) {
@@ -861,7 +1157,7 @@
         }
         saveConfig();
         // reset stash
-        s._stash = { p1:null, v1:null, p2:null, v2:null };
+        s._stash = { p1: null, v1: null, p2: null, v2: null };
         els.calValue.value = '';
         els.calValue.placeholder = 'Ej: 7000 o 10';
         overlay.warnings = [];
@@ -876,7 +1172,7 @@
     }
     // otherwise advance select
     const idx = steps.findIndex(x => x.id === s.id);
-    els.calStep.value = steps[Math.min(idx+1, steps.length-1)].id;
+    els.calStep.value = steps[Math.min(idx + 1, steps.length - 1)].id;
     setHelp();
     updateStepUI();
     clearStepClicks();
@@ -885,11 +1181,11 @@
 
   function makeLine(p1, p2, value) {
     // y = m x + b in image coordinates
-    const x1=p1[0], y1=p1[1], x2=p2[0], y2=p2[1];
-    const dx = x2-x1;
-    const m = (Math.abs(dx) < 1e-6) ? Infinity : (y2-y1)/dx;
-    const b = (m === Infinity) ? null : (y1 - m*x1);
-    return { value, p1, p2, points: [p1, p2], m, b, vertical: (m===Infinity), x_const: (m===Infinity ? x1 : null) };
+    const x1 = p1[0], y1 = p1[1], x2 = p2[0], y2 = p2[1];
+    const dx = x2 - x1;
+    const m = (Math.abs(dx) < 1e-6) ? Infinity : (y2 - y1) / dx;
+    const b = (m === Infinity) ? null : (y1 - m * x1);
+    return { value, p1, p2, points: [p1, p2], m, b, vertical: (m === Infinity), x_const: (m === Infinity ? x1 : null) };
   }
 
   function makeLineFromPoints(points, value) {
@@ -904,8 +1200,8 @@
   function panelXValueToPx(panelKey, value) {
     const ax = getAxis(panelKey);
     if (!ax) return null;
-    const [x1,y1] = ax.p1;
-    const [x2,y2] = ax.p2;
+    const [x1, y1] = ax.p1;
+    const [x2, y2] = ax.p2;
     // assume axis is mostly horizontal; map along x direction
     const t = (value - ax.v1) / (ax.v2 - ax.v1);
     return x1 + t * (x2 - x1);
@@ -962,23 +1258,26 @@
 
   function bracketLinesByValue(lines, v) {
     if (!lines || lines.length < 2) return null;
-    for (let i=0;i<lines.length-1;i++){
-      if (v >= lines[i].value && v <= lines[i+1].value) {
-        const low = lines[i], high = lines[i+1];
-        return {low, high, u: (v-low.value)/(high.value-low.value), out:false};
+    for (let i = 0; i < lines.length - 1; i++) {
+      if (v >= lines[i].value && v <= lines[i + 1].value) {
+        const low = lines[i], high = lines[i + 1];
+        return { low, high, u: (v - low.value) / (high.value - low.value), out: false };
       }
     }
     // out of range
-    return { out:true, min: lines[0].value, max: lines[lines.length-1].value };
+    return { out: true, min: lines[0].value, max: lines[lines.length - 1].value };
   }
 
   // ---------- computation ----------
   function computeAndOverlay() {
+    // Oculta la decisión anterior al iniciar un nuevo cálculo.
+    hideDecisionBanner();
     overlay = { points: [], segments: [], warnings: [], computed: null };
 
     if (!isReady()) {
       overlay.warnings.push('Calibración incompleta: define paneles, ejes X y al menos 2 líneas de ALT y 2 de OAT (ITT y NG).');
       renderResults(null);
+      showDecisionBanner(null);
       draw();
       return;
     }
@@ -995,14 +1294,22 @@
       warnings.push('Inputs inválidos: revisa que todos sean numéricos.');
       overlay.warnings = warnings;
       renderResults(null);
+      showDecisionBanner(null);
       draw();
       return;
     }
+
+    // Validaciones informativas del RFM (no bloquean el cálculo).
+    if (TQ < 90 || TQ > 105) warnings.push('Advertencia RFM: TQ indicado fuera del rango recomendado (90-105%).');
+    if (ITT_ind > 775) warnings.push('Advertencia RFM: ITT indicado supera 775°C.');
+    if (NG_ind > 102.4) warnings.push('Advertencia RFM: NG indicado supera 102.4%.');
 
     let outOfRange = false;
 
     // Step 1: x from TQ on panel1 (no extrapolation)
     const tqRange = axisRange('p1');
+    const ittRange = axisRange('itt');
+    const ngRange = axisRange('ng');
     let x_tq = null;
     if (!tqRange) {
       warnings.push('No se pudo leer el eje X del panel 1.');
@@ -1012,6 +1319,20 @@
     } else {
       x_tq = panelXValueToPx('p1', TQ);
       if (x_tq == null) warnings.push('No se pudo mapear TQ a panel 1.');
+    }
+
+    if (!ittRange) {
+      warnings.push('No se pudo leer el eje X del panel ITT.');
+    } else if (!inRange(ITT_ind, ittRange.min, ittRange.max)) {
+      warnings.push(`ITT indicado fuera del rango del eje ITT calibrado (${fmtCompact(ittRange.min, 0)}-${fmtCompact(ittRange.max, 0)} °C).`);
+      outOfRange = true;
+    }
+
+    if (!ngRange) {
+      warnings.push('No se pudo leer el eje X del panel NG.');
+    } else if (!inRange(NG_ind, ngRange.min, ngRange.max)) {
+      warnings.push(`NG indicado fuera del rango del eje NG calibrado (${fmtCompact(ngRange.min, 1)}-${fmtCompact(ngRange.max, 1)} %).`);
+      outOfRange = true;
     }
 
     // Step 2: y_transfer via ALT lines interpolation on panel1 at x_tq
@@ -1053,6 +1374,7 @@
     // Step 3: ITT max via OAT lines in ITT panel (solve x at y_transfer, interpolate, convert x->value)
     const oatIttBracket = bracketLinesByValue(config.lines.oat_itt, OAT);
     let ITT_max = null;
+    let ittMaxPoint = null;
     if (!oatIttBracket) {
       warnings.push('Faltan líneas OAT en panel ITT.');
     } else if (oatIttBracket.out) {
@@ -1065,14 +1387,28 @@
       else {
         const x_itt = x_low + oatIttBracket.u * (x_high - x_low);
         ITT_max = panelXPxToValue('itt', x_itt);
-        // overlay
-        overlay.points.push({x:x_itt, y:y_transfer, label:'ITT max'});
+        const ittPt = clampPointToPanel('itt', x_itt, y_transfer);
+        if (ittPt.clamped) {
+          warnings.push('El punto ITT calculado quedó fuera del panel y fue ajustado al límite.');
+          outOfRange = true;
+        }
+        ittMaxPoint = { x: ittPt.x, y: ittPt.y };
+        overlay.points.push({
+          x: ittPt.x,
+          y: ittPt.y,
+          label: `ITT max ${fmtCompact(ITT_max, 0)}`,
+          stroke: cssVar('--pac-ok', '#2adf60'),
+          fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
+          radius: 6,
+          width: 2,
+        });
       }
     }
 
     // Step 4: NG max via OAT lines in NG panel
     const oatNgBracket = bracketLinesByValue(config.lines.oat_ng, OAT);
     let NG_max = null;
+    let ngMaxPoint = null;
     if (!oatNgBracket) {
       warnings.push('Faltan líneas OAT en panel NG.');
     } else if (oatNgBracket.out) {
@@ -1085,25 +1421,179 @@
       else {
         const x_ng = x_low + oatNgBracket.u * (x_high - x_low);
         NG_max = panelXPxToValue('ng', x_ng);
-        overlay.points.push({x:x_ng, y:y_transfer, label:'NG max'});
+        const ngPt = clampPointToPanel('ng', x_ng, y_transfer);
+        if (ngPt.clamped) {
+          warnings.push('El punto NG calculado quedó fuera del panel y fue ajustado al límite.');
+          outOfRange = true;
+        }
+        ngMaxPoint = { x: ngPt.x, y: ngPt.y };
+        overlay.points.push({
+          x: ngPt.x,
+          y: ngPt.y,
+          label: `NG max ${fmtCompact(NG_max, 1)}`,
+          stroke: cssVar('--pac-ok', '#2adf60'),
+          fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
+          radius: 6,
+          width: 2,
+        });
       }
     }
 
     // overlay for process lines
     if (x_tq != null && y_transfer != null) {
-      // point at panel1 intersection
-      overlay.points.push({x:x_tq, y:y_transfer, label:'Transfer'});
-      // vertical segment in panel1 (from near bottom of panel1 bbox to y_transfer)
-      const bbox = config.panels.p1.bbox;
-      if (bbox) {
-        const y_bottom = Math.max(bbox[1], bbox[3]);
-        overlay.segments.push({a:{x:x_tq, y:y_bottom}, b:{x:x_tq, y:y_transfer}});
+      const transferPt = clampPointToPanel('p1', x_tq, y_transfer);
+      if (transferPt.clamped) {
+        warnings.push('El punto de transferencia quedó fuera del panel y fue ajustado al límite.');
+        outOfRange = true;
       }
-      // horizontal transfer line across to ITT/NG panels (visual)
+
+      const transferColor = cssVar('--pac-overlay-transfer', 'rgba(255,200,80,0.9)');
+      const maxColor = cssVar('--pac-ok', '#2adf60');
+      const indicatedColor = cssVar('--pac-overlay-point-stroke', 'rgba(255,80,80,0.9)');
+      const transferDash = [8, 6];
+      const maxDash = [12, 4];
+      const indDash = [4, 5];
+
+      // Punto de transferencia en panel 1.
+      overlay.points.push({
+        x: transferPt.x,
+        y: transferPt.y,
+        label: 'Transfer',
+        stroke: transferColor,
+        fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
+        radius: 6,
+        width: 2,
+      });
+
+      // Línea vertical de transferencia: desde el punto hacia arriba (escala superior).
+      const p1 = config.panels.p1.bbox;
+      if (p1) {
+        const yTopP1 = Math.min(p1[1], p1[3]);
+        overlay.segments.push({
+          a: { x: transferPt.x, y: transferPt.y },
+          b: { x: transferPt.x, y: yTopP1 },
+          style: transferColor,
+          dash: transferDash,
+          width: 2,
+        });
+      }
+
+      // Transferencia horizontal hacia paneles ITT/NG.
       const pItt = config.panels.itt.bbox;
       const pNg = config.panels.ng.bbox;
-      if (pItt) overlay.segments.push({a:{x:x_tq, y:y_transfer}, b:{x:pItt[0], y:y_transfer}, style:'rgba(255,200,80,0.9)'});
-      if (pNg) overlay.segments.push({a:{x:x_tq, y:y_transfer}, b:{x:pNg[0], y:y_transfer}, style:'rgba(255,200,80,0.9)'}); 
+      const ittLeftX = pItt ? Math.min(pItt[0], pItt[2]) : null;
+      const ngLeftX = pNg ? Math.min(pNg[0], pNg[2]) : null;
+
+      if (ittLeftX != null) {
+        overlay.segments.push({
+          a: { x: transferPt.x, y: transferPt.y },
+          b: { x: ittLeftX, y: transferPt.y },
+          style: transferColor,
+          dash: transferDash,
+          width: 2,
+        });
+        // Trazo de transferencia dentro del panel ITT hasta el cruce calculado.
+        if (ittMaxPoint) {
+          overlay.segments.push({
+            a: { x: ittLeftX, y: transferPt.y },
+            b: { x: ittMaxPoint.x, y: transferPt.y },
+            style: transferColor,
+            dash: transferDash,
+            width: 2,
+          });
+        }
+      }
+      if (ngLeftX != null) {
+        overlay.segments.push({
+          a: { x: transferPt.x, y: transferPt.y },
+          b: { x: ngLeftX, y: transferPt.y },
+          style: transferColor,
+          dash: transferDash,
+          width: 2,
+        });
+        // Trazo de transferencia dentro del panel NG hasta el cruce calculado.
+        if (ngMaxPoint) {
+          overlay.segments.push({
+            a: { x: ngLeftX, y: transferPt.y },
+            b: { x: ngMaxPoint.x, y: transferPt.y },
+            style: transferColor,
+            dash: transferDash,
+            width: 2,
+          });
+        }
+      }
+
+      // Líneas de máximos (MAX): color y patrón dedicados.
+      if (ittMaxPoint && pItt) {
+        const yTopItt = Math.min(pItt[1], pItt[3]);
+        overlay.segments.push({
+          a: { x: ittMaxPoint.x, y: ittMaxPoint.y },
+          b: { x: ittMaxPoint.x, y: yTopItt },
+          style: maxColor,
+          dash: maxDash,
+          width: 2,
+        });
+      }
+      if (ngMaxPoint && pNg) {
+        const yTopNg = Math.min(pNg[1], pNg[3]);
+        overlay.segments.push({
+          a: { x: ngMaxPoint.x, y: ngMaxPoint.y },
+          b: { x: ngMaxPoint.x, y: yTopNg },
+          style: maxColor,
+          dash: maxDash,
+          width: 2,
+        });
+      }
+
+      // Marca en carta los parámetros ingresados por el usuario (INDICADO).
+      if (yInItt) {
+        const xIttInd = panelXValueToPx('itt', ITT_ind);
+        if (xIttInd != null) {
+          const ittIndPt = clampPointToPanel('itt', xIttInd, y_transfer);
+          if (ittIndPt.clamped) {
+            warnings.push('ITT indicado quedó fuera del panel y fue ajustado al límite.');
+            outOfRange = true;
+          }
+          overlay.points.push({
+            x: ittIndPt.x,
+            y: ittIndPt.y,
+            label: `ITT ind ${fmtCompact(ITT_ind, 0)}`,
+            stroke: indicatedColor,
+            fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
+            radius: 6,
+            width: 2,
+          });
+        }
+      }
+      if (yInNg) {
+        const xNgInd = panelXValueToPx('ng', NG_ind);
+        if (xNgInd != null) {
+          const ngIndPt = clampPointToPanel('ng', xNgInd, y_transfer);
+          if (ngIndPt.clamped) {
+            warnings.push('NG indicado quedó fuera del panel y fue ajustado al límite.');
+            outOfRange = true;
+          }
+          overlay.points.push({
+            x: ngIndPt.x,
+            y: ngIndPt.y,
+            label: `NG ind ${fmtCompact(NG_ind, 1)}`,
+            stroke: indicatedColor,
+            fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
+            radius: 6,
+            width: 2,
+          });
+          if (pNg) {
+            const yTopNg = Math.min(pNg[1], pNg[3]);
+            overlay.segments.push({
+              a: { x: ngIndPt.x, y: ngIndPt.y },
+              b: { x: ngIndPt.x, y: yTopNg },
+              style: indicatedColor,
+              dash: indDash,
+              width: 2,
+            });
+          }
+        }
+      }
     }
 
     // comparisons
@@ -1125,6 +1615,7 @@
     };
     overlay.computed = computed;
     renderResults(computed);
+    showDecisionBanner(computed);
     logRun(computed);
     draw();
   }
@@ -1159,11 +1650,16 @@
     const fill = Math.max(0, Math.min(100, pInd));
     const roundedInd = Number.isFinite(indicated) ? indicated.toFixed(digits) : '—';
     const roundedMax = Number.isFinite(maxAllowed) ? maxAllowed.toFixed(digits) : '—';
+    const safeRoundedInd = escapeHtml(roundedInd);
+    const safeRoundedMax = escapeHtml(roundedMax);
+    const safeZone = escapeHtml(zone);
+    const safeFill = escapeHtml(fill.toFixed(2));
+    const safeMarker = escapeHtml(marker.toFixed(2));
     return `
-      <div class="metric-values">Indicado: <b>${roundedInd}</b>  |  Limite: <b>${roundedMax}</b></div>
+      <div class="metric-values">Indicado: <b>${safeRoundedInd}</b>  |  Limite: <b>${safeRoundedMax}</b></div>
       <div class="limit-track">
-        <div class="limit-fill ${zone}" style="width:${fill}%"></div>
-        <div class="limit-marker" style="left:${marker}%"></div>
+        <div class="limit-fill ${safeZone}" style="width:${safeFill}%"></div>
+        <div class="limit-marker" style="left:${safeMarker}%"></div>
       </div>
     `;
   }
@@ -1177,13 +1673,15 @@
       if (ok === null) return '<span class="badge warn"> DATOS NO CONCLUYENTES - VERIFIQUE LOS INPUTS</span>';
       return ok ? '<span class="badge ok">Dentro</span>' : '<span class="badge bad">Fuera</span>';
     };
-    const fmt = (v, d=1) => (v==null ? '—' : (Math.round(v*10**d)/10**d).toFixed(d));
-    const nearIttBand = 5;
-    const nearNgBand = 1;
+    const fmt = (v, d = 1) => (v == null ? '—' : (Math.round(v * 10 ** d) / 10 ** d).toFixed(d));
+    const nearIttBand = Number.isFinite(r.tolItt) ? r.tolItt : 5;
+    const nearNgBand = Number.isFinite(r.tolNg) ? r.tolNg : 0.2;
     const ittZone = metricZone(r.ITT_ind, r.ITT_max, nearIttBand);
     const ngZone = metricZone(r.NG_ind, r.NG_max, nearNgBand);
     const ittPam = (r.ITT_max == null) ? '—' : (r.ITT_max - r.ITT_ind).toFixed(1);
     const ngPam = (r.NG_max == null) ? '—' : (r.NG_max - r.NG_ind).toFixed(1);
+    const safeTolItt = escapeHtml(fmt(nearIttBand, 1));
+    const safeTolNg = escapeHtml(fmt(nearNgBand, 1));
     els.results.innerHTML = `
       <div class="metric-card">
         <div class="metric-head">
@@ -1206,8 +1704,8 @@
       <div class="row"><label>Estado NG (criterio)</label><div>${badge(r.ngOk)}</div></div>
       <hr/>
       <small>
-        Tolerancias: ITT ${r.tolItt}°C, NG${r.tolNg}%.
-        <br/>Semaforo visual: Verde dentro, Amarillo cerca del limite (±5°C ITT / ±1% NG), Rojo excedido.
+        Tolerancias: ITT ${safeTolItt}°C, NG${safeTolNg}%.
+        <br/>Semaforo visual: Verde dentro, Amarillo cerca del limite (±${safeTolItt}°C ITT / ±${safeTolNg}% NG), Rojo excedido.
         ${r.concluyente ? '' : '<br/>Input fuera del rango de la carta o calibración incompleta; revisa manualmente.'}
       </small>
     `;
@@ -1233,9 +1731,9 @@
       ng_ok: overlay.computed.ngOk,
       concluyente: overlay.computed.concluyente
     } : null;
-    const name = (els.readingName?.value || '').trim() || `PAC_${new Date().toISOString().replace(/[:.]/g,'-')}`;
+    const name = (els.readingName?.value || '').trim() || `PAC_${new Date().toISOString().replace(/[:.]/g, '-')}`;
     const item = {
-      id: `${Date.now()}_${Math.floor(Math.random()*10000)}`,
+      id: `${Date.now()}_${Math.floor(Math.random() * 10000)}`,
       name,
       timestamp: new Date().toISOString(),
       inputs,
@@ -1312,10 +1810,17 @@
 
   // ---------- input events ----------
   els.btnCompute.addEventListener('click', computeAndOverlay);
-  els.btnResetView.addEventListener('click', () => { view = {scale:1, tx:0, ty:0}; draw(); });
+  els.btnResetView.addEventListener('click', () => { view = { scale: 1, tx: 0, ty: 0 }; draw(); });
   if (els.btnSaveReading) els.btnSaveReading.addEventListener('click', saveCurrentReading);
   if (els.btnLoadReading) els.btnLoadReading.addEventListener('click', loadSelectedReading);
   if (els.btnDeleteReading) els.btnDeleteReading.addEventListener('click', deleteSelectedReading);
+  if (els.sidebarSheetToggle) {
+    els.sidebarSheetToggle.addEventListener('click', () => {
+      mobileSheetTouched = true;
+      applyMobileSheetState(!mobileSheetCollapsed);
+      resize();
+    });
+  }
 
   els.btnAdminToggle.addEventListener('click', () => {
     overlay.warnings = [];
@@ -1383,6 +1888,8 @@
   });
 
   els.btnClearCal.addEventListener('click', () => {
+    const ok = window.confirm('Esto borrará toda la calibración guardada. ¿Desea continuar?');
+    if (!ok) return;
     config = emptyConfig();
     saveConfig();
     overlay = { points: [], segments: [], warnings: [], computed: null };
@@ -1391,7 +1898,7 @@
 
   els.calStep.addEventListener('change', () => {
     const s = currentStep();
-    if (s.kind === 'xaxis') s._stash = { p1:null, v1:null, p2:null, v2:null };
+    if (s.kind === 'xaxis') s._stash = { p1: null, v1: null, p2: null, v2: null };
     overlay.warnings = [];
     setHelp();
     updateStepUI();
@@ -1421,7 +1928,7 @@
       return;
     }
     config.lines[s.family].push(line);
-    config.lines[s.family].sort((a,b)=>a.value-b.value);
+    config.lines[s.family].sort((a, b) => a.value - b.value);
     saveConfig();
     clearStepClicks();
     updateLineStatus();
@@ -1430,7 +1937,7 @@
     draw();
   });
   els.btnExport.addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(config, null, 2)], {type:'application/json'});
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'aw139_pac_chart_config.json';
@@ -1498,44 +2005,156 @@
   }
   function onUp() { dragging = false; last = null; }
 
-  // touch
-  function onTouchStart(e){
-    if (e.touches.length !== 1) return;
-    const t = e.touches[0];
-    onDown({clientX:t.clientX, clientY:t.clientY, shiftKey:false, preventDefault:()=>{}});
+  function touchMidpoint(t1, t2, rect) {
+    return {
+      x: ((t1.clientX + t2.clientX) * 0.5) - rect.left,
+      y: ((t1.clientY + t2.clientY) * 0.5) - rect.top,
+    };
   }
-  function onTouchMove(e){
-    if (e.touches.length !== 1) return;
-    const t = e.touches[0];
-    onMove({clientX:t.clientX, clientY:t.clientY});
-  }
-  function onTouchEnd(){ onUp(); }
 
-  canvas.addEventListener('wheel', onWheel, {passive:false});
+  function touchDistance(t1, t2) {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  }
+
+  // touch: 1 dedo = pan, 2 dedos = pinch zoom centrado en el punto medio.
+  function onTouchStart(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      onUp();
+      const rect = canvas.getBoundingClientRect();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      touchGesture.mode = 'pinch';
+      touchGesture.lastMid = touchMidpoint(t1, t2, rect);
+      touchGesture.lastDist = Math.max(1, touchDistance(t1, t2));
+      return;
+    }
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      touchGesture.mode = 'pan';
+      onDown({ clientX: t.clientX, clientY: t.clientY, shiftKey: false, preventDefault: () => { } });
+      return;
+    }
+    touchGesture.mode = 'none';
+  }
+
+  function onTouchMove(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const mid = touchMidpoint(t1, t2, rect);
+      const dist = Math.max(1, touchDistance(t1, t2));
+
+      if (!touchGesture.lastMid || !touchGesture.lastDist) {
+        touchGesture.lastMid = mid;
+        touchGesture.lastDist = dist;
+        return;
+      }
+
+      // Arrastre con dos dedos.
+      view.tx += (mid.x - touchGesture.lastMid.x);
+      view.ty += (mid.y - touchGesture.lastMid.y);
+
+      // Zoom centrado en el punto medio de los dedos.
+      const imgBefore = toImage(mid);
+      const scaleFactor = dist / touchGesture.lastDist;
+      view.scale = clamp(view.scale * scaleFactor, 0.2, 8);
+      const imgAfter = toImage(mid);
+      view.tx += (imgAfter.x - imgBefore.x) * view.scale;
+      view.ty += (imgAfter.y - imgBefore.y) * view.scale;
+
+      touchGesture.mode = 'pinch';
+      touchGesture.lastMid = mid;
+      touchGesture.lastDist = dist;
+      draw();
+      return;
+    }
+
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      touchGesture.mode = 'pan';
+      onMove({ clientX: t.clientX, clientY: t.clientY });
+    }
+  }
+
+  function onTouchEnd(e) {
+    if (e.touches.length === 1) {
+      const rect = canvas.getBoundingClientRect();
+      const t = e.touches[0];
+      touchGesture.mode = 'pan';
+      touchGesture.lastMid = null;
+      touchGesture.lastDist = 0;
+      dragging = true;
+      last = { x: t.clientX - rect.left, y: t.clientY - rect.top };
+      return;
+    }
+    onUp();
+    touchGesture.mode = 'none';
+    touchGesture.lastMid = null;
+    touchGesture.lastDist = 0;
+  }
+
+  canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('mousedown', onDown);
   window.addEventListener('mousemove', onMove);
   window.addEventListener('mouseup', onUp);
-  canvas.addEventListener('touchstart', onTouchStart, {passive:true});
-  canvas.addEventListener('touchmove', onTouchMove, {passive:true});
-  canvas.addEventListener('touchend', onTouchEnd, {passive:true});
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+  canvas.addEventListener('touchend', onTouchEnd, { passive: true });
+  canvas.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+  if (window.ResizeObserver) {
+    const resizeTarget = document.getElementById('canvasWrap') || canvas;
+    const observer = new ResizeObserver(() => resize());
+    observer.observe(resizeTarget);
+  }
+
+  window.addEventListener('message', (event) => {
+    if (!event || !event.data || event.data.type !== 'AW139_MODE') return;
+    applyMode(event.data.mode);
+  });
+
+  window.addEventListener('storage', (event) => {
+    if (event.key !== 'aw139-mode') return;
+    applyMode(event.newValue || MODES.NIGHT);
+  });
 
   // ---------- init ----------
+  syncModeFromHost();
   populateStepSelect();
   setHelp();
   updateStepUI();
   refreshReadingsUI();
   refreshStatus();
+  syncResponsiveSheet(true);
   (async () => {
     const loadedUrl = await loadUrlConfigIfNeeded();
     const loadedBundled = loadedUrl ? false : loadBundledConfigIfNeeded();
+    const autoFixedIttNow = maybeAutoFixIttAxisRange();
+    const autoScaledNow = img.complete ? maybeAutoScaleLegacyConfigToImage() : false;
     if (loadedUrl || loadedBundled) {
       hudText.textContent = 'Configuracion calibrada cargada automaticamente.';
+      refreshStatus();
+      draw();
+    }
+    if (autoFixedIttNow) {
+      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 500-800°C).';
+      refreshStatus();
+      draw();
+    }
+    if (autoScaledNow) {
+      hudText.textContent = 'Configuracion ajustada automaticamente a la resolucion de la carta.';
       refreshStatus();
       draw();
     }
   })();
 
   img.onload = () => {
+    imageLoadError = null;
+    const autoFixedItt = maybeAutoFixIttAxisRange();
+    const autoScaled = maybeAutoScaleLegacyConfigToImage();
     // fit view to screen
     const rect = canvas.getBoundingClientRect();
     const sx = rect.width / img.width;
@@ -1543,9 +2162,28 @@
     view.scale = Math.min(sx, sy);
     view.tx = (rect.width - img.width * view.scale) / 2;
     view.ty = (rect.height - img.height * view.scale) / 2;
+    if (autoScaled) {
+      hudText.textContent = 'Configuracion ajustada automaticamente a la resolucion de la carta.';
+      refreshStatus();
+    }
+    if (autoFixedItt) {
+      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 500-800°C).';
+      refreshStatus();
+    }
     draw();
   };
 
-  window.addEventListener('resize', resize);
+  img.onerror = () => {
+    imageLoadError = `No se pudo cargar ${CHART_IMAGE_SRC}`;
+    overlay = { points: [], segments: [], warnings: ['Error de imagen: la carta PAC no pudo cargarse.'], computed: null };
+    hudText.textContent = 'Error de carga de carta: verifica archivo local o parámetro ?chart=.';
+    refreshStatus();
+    draw();
+  };
+
+  window.addEventListener('resize', () => {
+    syncResponsiveSheet(false);
+    resize();
+  });
   resize();
 })();
