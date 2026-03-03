@@ -494,291 +494,262 @@
   }
 
   function buildPdf() {
-    const jsPDF = window.jspdf?.jsPDF || window.jsPDF;
+    const jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
     if (!jsPDF) throw new Error('jsPDF no disponible');
 
-    // ── Leer datos de inputs ────────────────────────────────
-    const eng = document.getElementById('engine')?.value || '?';
-    const tq  = parseFloat(document.getElementById('tq')?.value) || 0;
+    // ── Helpers de seguridad ─────────────────────────────────
+    // Eliminar caracteres no-ASCII problemáticos para jsPDF con fuentes base14
+    const safe = (s) => String(s == null ? '' : s)
+      .replace(/°/g, ' C')
+      .replace(/·/g, '-')
+      .replace(/[✓✗⚠]/g, '')
+      .replace(/[^\x00-\x7E]/g, '?');
+
+    // ── Leer datos de inputs ─────────────────────────────────
+    const eng = String(document.getElementById('engine')?.value || '1');
+    const tq  = parseFloat(document.getElementById('tq')?.value)  || 0;
     const itt = parseFloat(document.getElementById('itt')?.value) || 0;
-    const ng  = parseFloat(document.getElementById('ng')?.value) || 0;
+    const ng  = parseFloat(document.getElementById('ng')?.value)  || 0;
     const oat = parseFloat(document.getElementById('oat')?.value) || 0;
     const alt = parseFloat(document.getElementById('alt')?.value) || 0;
 
-    // ── Leer resultados calculados ──────────────────────────
-    // overlay.computed expuesto por app.js a través del objeto global
-    // Lo leemos del DOM de resultados o del canvas overlay
+    // ── Calcular máximos con motor v4 ────────────────────────
     let ittMax = null, ngMax = null, ittOk = null, ngOk = null;
     try {
-      // calcPAC está disponible globalmente desde PAC_ENGINE_v4_PATCH.js
       if (typeof calcPAC === 'function') {
         const r = calcPAC(tq, alt, oat);
         ittMax = r.itt_max;
         ngMax  = r.ng_max;
-        ittOk  = itt <= ittMax + 5;
-        ngOk   = ng  <= ngMax  + 0.2;
+        ittOk  = (itt <= ittMax + 5);
+        ngOk   = (ng  <= ngMax  + 0.2);
       }
     } catch(e) { /* sin resultados */ }
 
-    const fmt1 = (v) => v == null ? '---' : v.toFixed(1);
-    const fmt0 = (v) => v == null ? '---' : Math.round(v).toString();
-    const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const fmt1 = (v) => (v == null) ? '---' : Number(v).toFixed(1);
+    const fmt0 = (v) => (v == null) ? '---' : String(Math.round(Number(v)));
+    const ts   = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
-    // ── Crear PDF A4 portrait ────────────────────────────────
+    // ── Crear PDF A4 ─────────────────────────────────────────
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const W = 210, H = 297;
-    const margin = 14;
+    const W = 210, H = 297, margin = 14;
 
-    // ── Paleta de colores (inspirada en el PDF de referencia) ──
     const C = {
-      bg:      [245, 247, 252],
-      border:  [180, 190, 210],
-      header:  [20,  30,  50],
-      gold:    [180, 140, 40],
-      teal:    [26,  130, 118],
-      text:    [20,  28,  46],
-      dim:     [100, 115, 140],
-      ok:      [30,  140, 60],
-      bad:     [200, 30,  30],
-      warn:    [200, 140, 0],
-      white:   [255, 255, 255],
-      rowA:    [240, 243, 250],
-      rowB:    [252, 253, 255],
+      bg:     [245, 247, 252],
+      border: [180, 190, 210],
+      header: [20,  30,  50],
+      gold:   [180, 140, 40],
+      teal:   [26,  130, 118],
+      text:   [20,  28,  46],
+      dim:    [100, 115, 140],
+      ok:     [30,  140, 60],
+      bad:    [200, 30,  30],
+      warn:   [180, 120, 0],
+      white:  [255, 255, 255],
+      rowA:   [240, 243, 250],
+      rowB:   [252, 253, 255],
     };
 
-    const setFill   = (c) => pdf.setFillColor(...c);
-    const setStroke = (c) => pdf.setDrawColor(...c);
-    const setColor  = (c) => pdf.setTextColor(...c);
-    const setFont   = (f, s, sz) => { pdf.setFont(f, s); pdf.setFontSize(sz); };
+    const sf  = (c) => pdf.setFillColor(c[0], c[1], c[2]);
+    const ss  = (c) => pdf.setDrawColor(c[0], c[1], c[2]);
+    const sc  = (c) => pdf.setTextColor(c[0], c[1], c[2]);
+    const sfn = (f, style, sz) => { pdf.setFont(f, style); pdf.setFontSize(sz); };
+    const txt = (s, x, y, opts) => pdf.text(safe(s), x, y, opts || {});
 
     // ── ENCABEZADO ───────────────────────────────────────────
-    setFill(C.header); pdf.rect(0, 0, W, 22, 'F');
-    setColor(C.white);
-    setFont('helvetica', 'bold', 22);
-    pdf.text('AW139', margin, 14);
-    setFont('helvetica', 'normal', 9);
-    pdf.setCharSpace(2);
-    pdf.text('POWER ASSURANCE CHECK', margin + 28, 14);
-    pdf.setCharSpace(0);
+    sf(C.header); pdf.rect(0, 0, W, 22, 'F');
+    sc(C.white);
+    sfn('helvetica', 'bold', 22);
+    txt('AW139', margin, 14);
+    sfn('helvetica', 'normal', 8);
+    txt('POWER ASSURANCE CHECK', margin + 30, 14);
 
-    // Línea dorada bajo el header
-    setFill(C.gold); pdf.rect(0, 22, W, 1.2, 'F');
+    sf(C.gold); pdf.rect(0, 22, W, 1.2, 'F');
 
-    // ── DATOS DEL VUELO (fila superior) ─────────────────────
-    let y = 32;
-    setFill(C.bg); pdf.rect(margin, y, W - margin*2, 18, 'F');
-    setStroke(C.border); pdf.setLineWidth(0.3);
-    pdf.rect(margin, y, W - margin*2, 18, 'S');
+    // ── BLOQUE INFO VUELO ────────────────────────────────────
+    let y = 30;
+    sf(C.bg);  pdf.rect(margin, y, W - margin*2, 16, 'F');
+    ss(C.border); pdf.setLineWidth(0.3);
+    pdf.rect(margin, y, W - margin*2, 16, 'S');
 
-    // Matrícula placeholder
-    setFont('helvetica', 'normal', 7);
-    setColor(C.dim);
-    pdf.text('MATRÍCULA / REGISTRO', margin + 4, y + 5);
-    setFont('helvetica', 'bold', 11);
-    setColor(C.text);
-    pdf.text('FAC 0008 · Águila Uno', margin + 4, y + 12);
+    sfn('helvetica', 'normal', 6.5); sc(C.dim);
+    txt('MATRICULA / REGISTRO', margin + 3, y + 5);
+    sfn('helvetica', 'bold', 10); sc(C.text);
+    txt('FAC 0008 - Aguila Uno', margin + 3, y + 12);
 
-    // Timestamp
-    const tsX = W - margin - 60;
-    setFont('helvetica', 'normal', 7);
-    setColor(C.dim);
-    pdf.text('TIMESTAMP', tsX, y + 5);
-    setFont('helvetica', 'bold', 11);
-    setColor(C.text);
-    pdf.text(ts, tsX, y + 12);
+    const tsX = W - margin - 58;
+    sfn('helvetica', 'normal', 6.5); sc(C.dim);
+    txt('TIMESTAMP', tsX, y + 5);
+    sfn('helvetica', 'bold', 9); sc(C.text);
+    txt(ts, tsX, y + 12);
 
-    // ── TABLA DE DATOS ───────────────────────────────────────
-    y = 58;
+    // ── TABLA ────────────────────────────────────────────────
+    y = 52;
     const tblX = margin, tblW = W - margin * 2;
-    const colW = [28, 24, 28, 22, 28, 28, tblW - 158]; // Motor/Condiciones/NG/NG_max/TQ/ITT/ITT_max/Config
-    const rowH = 12;
+    // Columnas: COND | ENG | NG | MAX NG | TQ | ITT | MAX ITT | CONFIG
+    const colW = [26, 22, 24, 24, 20, 24, 24, tblW - 164];
+    const rowH = 10, dataRowH = 15;
 
-    // Cabeceras de tabla
-    const headers = ['', 'NG', 'TARGET\n(MAX NG)', 'TORQUE', 'ITT', 'TARGET\n(MAX ITT)', 'NR & CONFIG'];
-    setFill(C.header);
-    pdf.rect(tblX, y, tblW, rowH, 'F');
-    setColor(C.white);
-    setFont('helvetica', 'bold', 7);
+    // Cabeceras
+    sf(C.header); pdf.rect(tblX, y, tblW, rowH, 'F');
+    sc(C.white); sfn('helvetica', 'bold', 6.5);
+    const hdrs = ['', '', 'NG', 'TARGET\n(MAX NG)', 'TORQUE', 'ITT', 'TARGET\n(MAX ITT)', 'NR & CONFIG'];
     let cx = tblX;
-    headers.forEach((h, i) => {
-      if (i === 0) { cx += colW[0]; return; } // primera col vacía
-      const lines = h.split('\n');
-      if (lines.length > 1) {
-        pdf.text(lines[0], cx + colW[i]/2, y + 4.5, { align: 'center' });
-        pdf.text(lines[1], cx + colW[i]/2, y + 8.5, { align: 'center' });
-      } else {
-        pdf.text(h, cx + colW[i]/2, y + rowH/2 + 1, { align: 'center' });
+    hdrs.forEach((h, i) => {
+      if (h) {
+        const lines = h.split('\n');
+        if (lines.length > 1) {
+          txt(lines[0], cx + colW[i]/2, y + 3.5, { align: 'center' });
+          txt(lines[1], cx + colW[i]/2, y + 7.5, { align: 'center' });
+        } else {
+          txt(h, cx + colW[i]/2, y + rowH/2 + 1.5, { align: 'center' });
+        }
       }
       cx += colW[i];
     });
 
-    // Línea vertical entre cabeceras
-    setStroke(C.border); pdf.setLineWidth(0.2);
+    // Separadores verticales header
+    ss(C.border); pdf.setLineWidth(0.2);
     cx = tblX;
-    headers.forEach((_, i) => {
-      if (i > 0) pdf.line(cx, y, cx, y + rowH);
-      cx += colW[i];
-    });
+    colW.forEach((cw, i) => { if (i > 0) pdf.line(cx, y, cx, y + rowH); cx += cw; });
 
-    // Filas de datos: condiciones (izq) + ENG #1 + ENG #2
-    const rows = [
-      {
-        condLabel: `TEMPERATURE\n${oat}°C`,
-        engLabel: `ENG #${eng}`,
-        ng: fmt1(ng),
-        ng_max: fmt1(ngMax),
-        tq: fmt0(tq),
-        itt: `${fmt0(itt)}°C`,
-        itt_max: `${fmt0(ittMax)}°C`,
-        config: `100%\nEAPS OFF`,
-        active: true,
-      },
-      {
-        condLabel: `ELEVATION\n${fmt0(alt)}ft`,
-        engLabel: `ENG #${eng === '1' ? '2' : '1'}`,
-        ng: '--.-',
-        ng_max: fmt1(ngMax),
-        tq: fmt0(tq),
-        itt: '---°C',
-        itt_max: `${fmt0(ittMax)}°C`,
-        config: '',
-        active: false,
-      },
-    ];
+    // ── FILA 1: TEMPERATURA + ENG activo ────────────────────
+    const r1y = y + rowH;
+    sf(C.rowA); pdf.rect(tblX, r1y, tblW, dataRowH, 'F');
+    ss(C.border); pdf.rect(tblX, r1y, tblW, dataRowH, 'S');
 
-    const dataRowH = 16;
-    rows.forEach((row, ri) => {
-      const ry = y + rowH + ri * dataRowH;
-      setFill(ri % 2 === 0 ? C.rowA : C.rowB);
-      pdf.rect(tblX, ry, tblW, dataRowH, 'F');
-      setStroke(C.border); pdf.setLineWidth(0.2);
-      pdf.rect(tblX, ry, tblW, dataRowH, 'S');
+    // Celda TEMPERATURE
+    sf(C.header); pdf.rect(tblX, r1y, colW[0], dataRowH, 'F');
+    sc(C.white); sfn('helvetica', 'normal', 5.5);
+    txt('TEMPERATURE', tblX + colW[0]/2, r1y + 4.5, { align: 'center' });
+    sfn('helvetica', 'bold', 9);
+    txt(oat + ' C', tblX + colW[0]/2, r1y + 11, { align: 'center' });
 
-      // Col 0: condiciones (fondo oscuro en celda izquierda)
-      setFill(C.header);
-      pdf.rect(tblX, ry, colW[0], dataRowH, 'F');
-      setColor(C.white);
-      setFont('helvetica', 'bold', 7);
-      const condLines = row.condLabel.split('\n');
-      pdf.text(condLines[0], tblX + colW[0]/2, ry + 5, { align: 'center' });
-      setFont('helvetica', 'bold', 9);
-      pdf.text(condLines[1], tblX + colW[0]/2, ry + 11, { align: 'center' });
+    // ENG label
+    cx = tblX + colW[0];
+    sc(C.dim); sfn('helvetica', 'bold', 8);
+    txt('ENG #' + eng, cx + colW[1]/2, r1y + dataRowH/2 + 1.5, { align: 'center' });
+    cx += colW[1];
 
-      cx = tblX + colW[0];
-      const vals = [row.engLabel, row.ng + '%', row.ng_max + '%', row.tq + '%', row.itt, row.itt_max, row.config];
-      vals.forEach((v, ci) => {
-        const cw = colW[ci + 1];
-        if (ci === 0) {
-          // Etiqueta motor
-          setColor(C.dim);
-          setFont('helvetica', 'bold', 8);
-          pdf.text(v, cx + cw/2, ry + dataRowH/2 + 1.5, { align: 'center' });
-        } else if (ci === 1 || ci === 2) {
-          // NG
-          setColor(row.active ? (ngOk ? C.ok : C.bad) : C.dim);
-          setFont('helvetica', 'bold', 11);
-          pdf.text(v, cx + cw/2, ry + dataRowH/2 + 2, { align: 'center' });
-        } else if (ci === 3) {
-          // TQ (fila fusionada — centrado verticalmente en ambas filas)
-          if (ri === 0) {
-            setFill([230, 235, 245]);
-            pdf.rect(cx, y + rowH, cw, dataRowH * 2, 'F');
-            setColor(C.text);
-            setFont('helvetica', 'bold', 14);
-            pdf.text(v, cx + cw/2, y + rowH + dataRowH + 2, { align: 'center' });
-            setFont('helvetica', 'normal', 7);
-            setColor(C.dim);
-            pdf.text('%TQ', cx + cw/2, y + rowH + dataRowH + 7, { align: 'center' });
-          }
-        } else if (ci === 4) {
-          // ITT
-          setColor(row.active ? (ittOk ? C.ok : C.bad) : C.dim);
-          setFont('helvetica', 'bold', 11);
-          pdf.text(v, cx + cw/2, ry + dataRowH/2 + 2, { align: 'center' });
-        } else if (ci === 5) {
-          // ITT_max (fusionada)
-          if (ri === 0) {
-            setFill([230, 245, 235]);
-            pdf.rect(cx, y + rowH, cw, dataRowH * 2, 'F');
-            setColor(C.teal);
-            setFont('helvetica', 'bold', 13);
-            pdf.text(v, cx + cw/2, y + rowH + dataRowH + 2, { align: 'center' });
-          }
-        } else if (ci === 6) {
-          // Config
-          if (ri === 0) {
-            setColor(C.text);
-            setFont('helvetica', 'bold', 9);
-            const cfgLines = row.config.split('\n');
-            pdf.text(cfgLines[0], cx + cw/2, y + rowH + dataRowH - 1, { align: 'center' });
-            setFont('helvetica', 'normal', 8);
-            setColor(C.dim);
-            if (cfgLines[1]) pdf.text(cfgLines[1], cx + cw/2, y + rowH + dataRowH + 5, { align: 'center' });
-          }
-        }
-        cx += cw;
-      });
+    // NG indicado
+    sc(ngOk === null ? C.dim : (ngOk ? C.ok : C.bad));
+    sfn('helvetica', 'bold', 10);
+    txt(fmt1(ng) + '%', cx + colW[2]/2, r1y + dataRowH/2 + 2, { align: 'center' });
+    cx += colW[2];
 
-      // Separadores verticales en filas de datos
-      cx = tblX + colW[0];
-      colW.slice(1).forEach((cw) => {
-        pdf.line(cx, ry, cx, ry + dataRowH);
+    // MAX NG — fusionada en 2 filas (se dibuja después con la fila 2)
+    cx += colW[3]; // skip por ahora
+
+    // TORQUE — fusionado
+    const tqCx = cx;
+    sf([230, 235, 245]); pdf.rect(tqCx, r1y, colW[4], dataRowH * 2, 'F');
+    sc(C.text); sfn('helvetica', 'bold', 13);
+    txt(fmt0(tq), tqCx + colW[4]/2, r1y + dataRowH + 1, { align: 'center' });
+    sfn('helvetica', 'normal', 6); sc(C.dim);
+    txt('%TQ', tqCx + colW[4]/2, r1y + dataRowH + 6.5, { align: 'center' });
+    cx += colW[4];
+
+    // ITT indicado
+    sc(ittOk === null ? C.dim : (ittOk ? C.ok : C.bad));
+    sfn('helvetica', 'bold', 10);
+    txt(fmt0(itt) + ' C', cx + colW[5]/2, r1y + dataRowH/2 + 2, { align: 'center' });
+    cx += colW[5];
+
+    // MAX ITT — fusionada
+    const ittMaxCx = cx;
+    sf([230, 245, 235]); pdf.rect(ittMaxCx, r1y, colW[6], dataRowH * 2, 'F');
+    sc(C.teal); sfn('helvetica', 'bold', 12);
+    txt(fmt0(ittMax) + ' C', ittMaxCx + colW[6]/2, r1y + dataRowH + 1, { align: 'center' });
+    cx += colW[6];
+
+    // CONFIG — fusionada
+    sc(C.text); sfn('helvetica', 'bold', 9);
+    txt('100%', cx + colW[7]/2, r1y + dataRowH - 1, { align: 'center' });
+    sfn('helvetica', 'normal', 7); sc(C.dim);
+    txt('EAPS OFF', cx + colW[7]/2, r1y + dataRowH + 5, { align: 'center' });
+
+    // ── FILA 2: ELEVATION + ENG inactivo ────────────────────
+    const r2y = r1y + dataRowH;
+    sf(C.rowB); pdf.rect(tblX, r2y, tblW, dataRowH, 'F');
+    ss(C.border); pdf.rect(tblX, r2y, tblW, dataRowH, 'S');
+
+    sf(C.header); pdf.rect(tblX, r2y, colW[0], dataRowH, 'F');
+    sc(C.white); sfn('helvetica', 'normal', 5.5);
+    txt('ELEVATION', tblX + colW[0]/2, r2y + 4.5, { align: 'center' });
+    sfn('helvetica', 'bold', 9);
+    txt(fmt0(alt) + 'ft', tblX + colW[0]/2, r2y + 11, { align: 'center' });
+
+    cx = tblX + colW[0];
+    sc(C.dim); sfn('helvetica', 'bold', 8);
+    txt('ENG #' + (eng === '1' ? '2' : '1'), cx + colW[1]/2, r2y + dataRowH/2 + 1.5, { align: 'center' });
+    cx += colW[1];
+
+    // NG inactivo
+    sc(C.dim); sfn('helvetica', 'bold', 10);
+    txt('--.-' + '%', cx + colW[2]/2, r2y + dataRowH/2 + 2, { align: 'center' });
+    cx += colW[2];
+
+    // MAX NG (fusionada — se dibuja aquí abarcando r1y y r2y)
+    const ngMaxCx = tblX + colW[0] + colW[1] + colW[2];
+    sf([230, 245, 235]); pdf.rect(ngMaxCx, r1y, colW[3], dataRowH * 2, 'F');
+    sc(C.teal); sfn('helvetica', 'bold', 12);
+    txt(fmt1(ngMax) + '%', ngMaxCx + colW[3]/2, r1y + dataRowH + 1, { align: 'center' });
+
+    // ITT inactivo
+    cx = tblX + colW[0] + colW[1] + colW[2] + colW[3] + colW[4];
+    sc(C.dim); sfn('helvetica', 'bold', 10);
+    txt('--- C', cx + colW[5]/2, r2y + dataRowH/2 + 2, { align: 'center' });
+
+    // Separadores verticales en ambas filas de datos
+    [r1y, r2y].forEach(ry => {
+      cx = tblX;
+      colW.forEach((cw, i) => {
+        if (i > 0) { ss(C.border); pdf.setLineWidth(0.2); pdf.line(cx, ry, cx, ry + dataRowH); }
         cx += cw;
       });
     });
 
-    // ── BANNER DE DECISIÓN ───────────────────────────────────
-    y = y + rowH + rows.length * dataRowH + 6;
-    let bannerColor = C.warn, bannerText = '⚠  NO CONCLUYENTE';
+    // ── BANNER DECISIÓN ──────────────────────────────────────
+    y = r2y + dataRowH + 5;
+    let bColor = C.warn, bText = 'NO CONCLUYENTE - VERIFIQUE CALIBRACION';
     if (ittOk != null && ngOk != null) {
-      if (ittOk && ngOk) { bannerColor = C.ok;  bannerText = '✓  DENTRO DE LÍMITES'; }
-      else               { bannerColor = C.bad; bannerText = '✗  LÍMITE EXCEDIDO'; }
+      if (ittOk && ngOk) { bColor = C.ok;  bText = 'DENTRO DE LIMITES'; }
+      else               { bColor = C.bad; bText = 'LIMITE EXCEDIDO'; }
     }
-    setFill(bannerColor); pdf.rect(margin, y, tblW, 10, 'F');
-    setColor(C.white);
-    setFont('helvetica', 'bold', 11);
-    pdf.setCharSpace(1.5);
-    pdf.text(bannerText, W/2, y + 7, { align: 'center' });
-    pdf.setCharSpace(0);
+    sf(bColor); pdf.rect(margin, y, tblW, 9, 'F');
+    sc(C.white); sfn('helvetica', 'bold', 10);
+    txt(bText, W/2, y + 6.5, { align: 'center' });
 
-    // ── TÍTULO DE GRÁFICA ────────────────────────────────────
-    y += 16;
-    setFont('helvetica', 'bold', 8);
-    setColor(C.dim);
-    pdf.setCharSpace(1);
-    pdf.text('GRAPH OVERLAY', margin, y);
-    pdf.setCharSpace(0);
-    setFill(C.teal); pdf.rect(margin, y + 1.5, 24, 0.8, 'F');
+    // ── TÍTULO GRÁFICA ───────────────────────────────────────
+    y += 14;
+    sfn('helvetica', 'bold', 7); sc(C.dim);
+    txt('GRAPH OVERLAY', margin, y);
+    sf(C.teal); pdf.rect(margin, y + 1.5, 22, 0.7, 'F');
 
-    // ── CAPTURA DEL CANVAS ────────────────────────────────────
-    y += 6;
-    const chartH = H - y - margin - 14;
+    // ── CANVAS ───────────────────────────────────────────────
+    y += 5;
+    const chartH = H - y - margin - 12;
     const chartW = tblW;
 
     try {
-      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const imgData = canvas.toDataURL('image/jpeg', 0.90);
       pdf.addImage(imgData, 'JPEG', margin, y, chartW, chartH);
-      // Marco sobre la gráfica
-      setStroke(C.border); pdf.setLineWidth(0.4);
+      ss(C.border); pdf.setLineWidth(0.4);
       pdf.rect(margin, y, chartW, chartH, 'S');
     } catch(e) {
-      setFill(C.bg); pdf.rect(margin, y, chartW, chartH, 'F');
-      setFont('helvetica', 'italic', 9);
-      setColor(C.dim);
-      pdf.text('Gráfico no disponible', W/2, y + chartH/2, { align: 'center' });
+      sf(C.bg); pdf.rect(margin, y, chartW, chartH, 'F');
+      sfn('helvetica', 'italic', 9); sc(C.dim);
+      txt('Grafico no disponible', W/2, y + chartH/2, { align: 'center' });
     }
 
-    // ── FOOTER ────────────────────────────────────────────────
-    const footerY = H - 9;
-    setFill(C.header); pdf.rect(0, H - 12, W, 12, 'F');
-    setFont('helvetica', 'normal', 7);
-    setColor([130, 145, 170]);
-    pdf.text('139G1580A001 · Figure 4-5 NR=100% EAPS OFF', margin, footerY);
-    pdf.text(`Generated by AW139 QRH · FAC 0008`, W/2, footerY, { align: 'center' });
-    pdf.text('ICN-39-A-155000-A-A0126-05003-A-04-1', W - margin, footerY, { align: 'right' });
+    // ── FOOTER ───────────────────────────────────────────────
+    sf(C.header); pdf.rect(0, H - 11, W, 11, 'F');
+    sfn('helvetica', 'normal', 6.5); sc([130, 145, 170]);
+    txt('139G1580A001 - Figure 4-5 NR=100% EAPS OFF', margin, H - 4.5);
+    txt('Generated by AW139 QRH - FAC 0008', W/2, H - 4.5, { align: 'center' });
+    txt('ICN-39-A-155000-A-A0126-05003-A-04-1', W - margin, H - 4.5, { align: 'right' });
 
-    // ── GUARDAR ────────────────────────────────────────────────
-    const fname = `PAC_ENG${eng}_${ts.replace(/[: ]/g,'-')}.pdf`;
+    // ── GUARDAR ──────────────────────────────────────────────
+    const fname = 'PAC_ENG' + eng + '_' + ts.replace(/[: ]/g, '-') + '.pdf';
     pdf.save(fname);
   }
 
