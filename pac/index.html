@@ -5,131 +5,785 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>AW139 Power Assurance Digital</title>
   <link rel="stylesheet" href="styles.css"/>
+  <style>
+    /* ── VISTA DE INPUTS ────────────────────────────────────── */
+    #inputView {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px 16px 40px;
+      box-sizing: border-box;
+      background: var(--bg);
+    }
+
+    #inputView.hidden { display: none; }
+
+    .input-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 28px 24px 24px;
+    }
+
+    .input-card-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .input-card-header .pac-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 3px;
+      color: var(--gold);
+      line-height: 1;
+    }
+
+    .input-card-header .pac-sub {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--dim);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .pac-squadron-badge {
+      display: inline-block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 2px 8px;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    .input-group {
+      margin-bottom: 14px;
+    }
+
+    .input-group label {
+      display: block;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 5px;
+    }
+
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--pac-field-bg);
+      border: 1px solid var(--pac-field-border);
+      color: var(--pac-field-text);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 20px;
+      padding: 10px 12px;
+      border-radius: 2px;
+      -webkit-appearance: none;
+      appearance: none;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+      border-color: var(--pac-primary);
+    }
+
+    .input-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn-compute-main {
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      background: var(--pac-primary);
+      color: var(--pac-primary-text);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 3px;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn-compute-main:active {
+      opacity: 0.85;
+      transform: scale(0.98);
+    }
+
+    .input-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 18px 0 14px;
+    }
+
+    /* ── VISTA DE GRÁFICA ───────────────────────────────────── */
+    #chartView { display: none; }
+    #chartView.active { display: block; }
+
+    /* ── TOOLBAR SOBRE LA GRÁFICA ───────────────────────────── */
+    #chartToolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .toolbar-btn {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--dim);
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+
+    .toolbar-btn:hover { background: var(--row-hover); color: var(--text); }
+
+    .toolbar-btn.primary {
+      background: var(--pac-primary);
+      color: var(--pac-primary-text);
+      border-color: var(--pac-primary);
+    }
+
+    .toolbar-btn.export-btn {
+      background: transparent;
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .toolbar-btn.export-btn:hover {
+      background: rgba(200,160,60,0.12);
+    }
+
+    .toolbar-spacer { flex: 1; }
+
+    .toolbar-summary {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--dim);
+      white-space: nowrap;
+    }
+
+    /* ── SPINNER DE EXPORTACIÓN ─────────────────────────────── */
+    #exportSpinner {
+      display: none;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--gold);
+      animation: blink 0.8s step-start infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
 </head>
 <body>
-<header>
-  <h1>AW139 POWER ASSURANCE DIGITAL</h1>
-  <small id="statusText">Sin calibracion completa: entra a Admin / Calibracion y define paneles, ejes y lineas.</small>
-</header>
 
-<main>
-  <aside id="sidebar">
-    <div class="card">
-      <h2>1) INPUTS</h2>
-      <div class="row"><label>Motor</label>
-        <select id="engine">
-          <option value="1">Motor 1</option>
-          <option value="2">Motor 2</option>
-        </select>
-      </div>
-      <div class="row"><label>Torque indicado (%TQ)</label><input id="tq" type="number" step="0.1" value="100"/></div>
-      <div class="row"><label>ITT indicado (C)</label><input id="itt" type="number" step="1" value="780"/></div>
-      <div class="row"><label>NG indicado (%)</label><input id="ng" type="number" step="0.1" value="101.0"/></div>
-      <div class="row"><label>OAT (C)</label><input id="oat" type="number" step="1" value="10"/></div>
-      <div class="row"><label>Altitud presion (ft)</label><input id="alt" type="number" step="10" value="7000"/></div>
-      <div class="row" style="gap:10px;justify-content:space-between">
-        <button id="btnCompute">Calcular y graficar</button>
-        <button id="btnResetView" class="secondary">Reset vista</button>
-      </div>
-      <small>Tip: zoom con rueda, arrastra con mouse (o 1 dedo). <kbd>Shift</kbd> + click para capturar puntos en calibracion.</small>
+<!-- ══════════════════════════════════════════════════════════
+     VISTA 1: INPUTS LIMPIA
+═══════════════════════════════════════════════════════════ -->
+<div id="inputView">
+  <div class="input-card">
+
+    <div class="input-card-header">
+      <div class="pac-title">Power Assurance Check</div>
+      <div class="pac-sub">AW139 · NR 100% · EAPS OFF</div>
+      <div class="pac-squadron-badge">FAC 0008 · Águila Uno</div>
     </div>
 
-    <div class="card">
-      <h2>2) RESULTADOS</h2>
-      <div id="results">
-        <small>Calcula para ver maximos y estado.</small>
+    <div class="input-group">
+      <label>Motor</label>
+      <select id="engine">
+        <option value="1">Motor 1</option>
+        <option value="2">Motor 2</option>
+      </select>
+    </div>
+
+    <hr class="input-divider"/>
+
+    <div class="input-row-2">
+      <div class="input-group">
+        <label>TQ indicado (%)</label>
+        <input id="tq" type="number" step="0.1" value="100" inputmode="decimal"/>
+      </div>
+      <div class="input-group">
+        <label>Presión Alt (ft)</label>
+        <input id="alt" type="number" step="10" value="7000" inputmode="numeric"/>
       </div>
     </div>
 
-    <div class="card">
-      <h2>2.1) LECTURAS PAC</h2>
-      <div class="row"><label>Nombre lectura</label><input id="readingName" type="text" placeholder="Ej: ENG1_2026-02-26"/></div>
-      <div class="row" style="gap:10px;justify-content:space-between">
-        <button id="btnSaveReading" class="secondary">Guardar lectura</button>
+    <div class="input-row-2">
+      <div class="input-group">
+        <label>ITT indicado (°C)</label>
+        <input id="itt" type="number" step="1" value="700" inputmode="numeric"/>
       </div>
-      <div class="row"><label>Lecturas guardadas</label>
-        <select id="readingSelect"></select>
+      <div class="input-group">
+        <label>OAT (°C)</label>
+        <input id="oat" type="number" step="1" value="10" inputmode="numeric"/>
       </div>
-      <div class="row" style="gap:10px;justify-content:space-between">
-        <button id="btnLoadReading" class="secondary">Cargar</button>
-        <button id="btnDeleteReading" class="danger">Borrar</button>
-      </div>
-      <small id="readingsInfo">Sin lecturas guardadas.</small>
     </div>
 
-    <div class="card">
-      <h2>3) ADMIN / CALIBRACION</h2>
-      <div class="row"><label>Modo admin</label>
-        <button id="btnAdminToggle" class="secondary">Activar</button>
+    <div class="input-group">
+      <label>NG indicado (%)</label>
+      <input id="ng" type="number" step="0.1" value="95.0" inputmode="decimal"/>
+    </div>
+
+    <button class="btn-compute-main" id="btnCompute">
+      CALCULAR
+    </button>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     VISTA 2: GRÁFICA + RESULTADOS
+═══════════════════════════════════════════════════════════ -->
+<div id="chartView">
+
+  <!-- Toolbar -->
+  <div id="chartToolbar">
+    <button class="toolbar-btn" id="btnBack">← Nuevo cálculo</button>
+    <span class="toolbar-spacer"></span>
+    <span class="toolbar-summary" id="toolbarSummary"></span>
+    <button class="toolbar-btn export-btn" id="btnExportPdf">↓ Exportar PDF</button>
+    <span id="exportSpinner">GENERANDO...</span>
+    <button class="toolbar-btn" id="btnResetView">Reset vista</button>
+    <button class="toolbar-btn" id="btnAdminToggle">Admin</button>
+  </div>
+
+  <!-- Layout original (sidebar + canvas) — se muestra en vista 2 -->
+  <main>
+    <aside id="sidebar">
+
+      <div class="card">
+        <h2>2) RESULTADOS</h2>
+        <div id="results">
+          <small>Calcula para ver maximos y estado.</small>
+        </div>
       </div>
-      <div class="row"><label>Clave admin (opcional)</label>
-        <input id="adminKey" type="password" placeholder="Deja vacio si no usas clave"/>
-      </div>
-      <div class="row" style="gap:10px;justify-content:space-between">
-        <button id="btnSetAdminKey" class="secondary">Guardar clave</button>
-        <button id="btnClearAdminKey" class="secondary">Borrar clave</button>
-      </div>
-      <div class="row" style="gap:10px;justify-content:space-between">
-        <button id="btnResetAdminKey" class="secondary">Reset clave (olvidada)</button>
-      </div>
-      <div id="calPanel" style="display:none">
-        <hr/>
+
+      <div class="card">
+        <h2>LECTURAS PAC</h2>
+        <div class="row"><label>Nombre lectura</label>
+          <input id="readingName" type="text" placeholder="Ej: ENG1_2026-03-03"/>
+        </div>
         <div class="row" style="gap:10px;justify-content:space-between">
-          <button id="btnClearCal" class="danger">Borrar config</button>
+          <button id="btnSaveReading" class="secondary">Guardar</button>
         </div>
-        <div class="row"><label>Modo captura</label>
-          <button id="btnCaptureToggle" class="secondary">Desactivado</button>
-        </div>
-        <hr/>
-        <div class="row"><label>Paso</label><select id="calStep"></select></div>
-        <div class="row"><label>Valor (para lineas)</label><input id="calValue" type="number" step="1" placeholder="Ej: 7000 o 10"/></div>
-        <div class="row" style="gap:10px;justify-content:space-between">
-          <button id="btnNext" class="secondary">Siguiente</button>
-          <button id="btnUndo" class="secondary">Deshacer</button>
+        <div class="row"><label>Guardadas</label>
+          <select id="readingSelect"></select>
         </div>
         <div class="row" style="gap:10px;justify-content:space-between">
-          <button id="btnSaveLine" class="secondary">Guardar linea</button>
+          <button id="btnLoadReading" class="secondary">Cargar</button>
+          <button id="btnDeleteReading" class="danger">Borrar</button>
         </div>
-        <small id="lineStatus"></small>
-        <small id="calHelp"></small>
-        <small>Tip: con Modo captura desactivado, haz clic en puntos/lineas guardadas para editar su valor.</small>
-        <hr/>
-        <div class="row" style="gap:10px;justify-content:space-between">
-          <button id="btnExport" class="secondary">Exportar JSON</button>
-          <label class="secondary" style="padding:7px 11px;border-radius:2px;cursor:pointer;border:1px solid var(--border);font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--dim)">
-            Importar JSON<input id="fileImport" type="file" accept="application/json" style="display:none"/>
-          </label>
-        </div>
-        <small>Recomendacion: calibra con zoom alto para precision.</small>
+        <small id="readingsInfo">Sin lecturas guardadas.</small>
       </div>
-    </div>
 
-    <div class="card">
-      <h2>NOTAS OPERACIONALES</h2>
-      <small>
-        Esta herramienta replica la lectura de la carta de PAC.
-        Si el punto queda fuera del rango de la carta, la app marcara "no concluyente".
-      </small>
-    </div>
-  </aside>
-
-  <section id="canvasWrap">
-    <div id="decisionBanner" class="decision-banner hidden" role="status" aria-live="assertive"></div>
-    <canvas id="chartCanvas"></canvas>
-    <div id="hud">
-      <div><b>Ayuda</b></div>
-      <div id="hudText" style="margin-top:6px;color:var(--dim)">
-        Carga la carta (ya incluida) y calibra para habilitar calculos.
+      <div class="card">
+        <h2>ADMIN / CALIBRACIÓN</h2>
+        <div class="row"><label>Clave admin</label>
+          <input id="adminKey" type="password" placeholder="Opcional"/>
+        </div>
+        <div class="row" style="gap:10px;justify-content:space-between">
+          <button id="btnSetAdminKey" class="secondary">Guardar clave</button>
+          <button id="btnClearAdminKey" class="secondary">Borrar clave</button>
+        </div>
+        <div class="row">
+          <button id="btnResetAdminKey" class="secondary">Reset clave</button>
+        </div>
+        <div id="calPanel" style="display:none">
+          <hr/>
+          <div class="row" style="gap:10px;justify-content:space-between">
+            <button id="btnClearCal" class="danger">Borrar config</button>
+          </div>
+          <div class="row"><label>Modo captura</label>
+            <button id="btnCaptureToggle" class="secondary">Desactivado</button>
+          </div>
+          <hr/>
+          <div class="row"><label>Paso</label><select id="calStep"></select></div>
+          <div class="row"><label>Valor</label>
+            <input id="calValue" type="number" step="1" placeholder="Ej: 7000 o 10"/>
+          </div>
+          <div class="row" style="gap:10px;justify-content:space-between">
+            <button id="btnNext" class="secondary">Siguiente</button>
+            <button id="btnUndo" class="secondary">Deshacer</button>
+          </div>
+          <div class="row">
+            <button id="btnSaveLine" class="secondary">Guardar línea</button>
+          </div>
+          <small id="lineStatus"></small>
+          <small id="calHelp"></small>
+          <small>Tip: calibra con zoom alto para precisión.</small>
+          <hr/>
+          <div class="row" style="gap:10px;justify-content:space-between">
+            <button id="btnExport" class="secondary">Exportar JSON</button>
+            <label class="secondary" style="padding:7px 11px;border-radius:2px;cursor:pointer;border:1px solid var(--border);font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--dim)">
+              Importar JSON<input id="fileImport" type="file" accept="application/json" style="display:none"/>
+            </label>
+          </div>
+          <small>Recomendación: calibra con zoom alto para precisión.</small>
+        </div>
       </div>
-    </div>
-    <button id="sidebarSheetToggle" class="sheet-toggle" type="button" aria-expanded="true" aria-controls="sidebar">Ocultar panel</button>
-  </section>
-</main>
 
+      <div class="card">
+        <h2>NOTAS</h2>
+        <small>
+          Esta herramienta replica la lectura de la carta de PAC.
+          Si el punto queda fuera del rango de la carta, la app marcará "no concluyente".
+        </small>
+      </div>
+
+    </aside>
+
+    <section id="canvasWrap">
+      <div id="decisionBanner" class="decision-banner hidden" role="status" aria-live="assertive"></div>
+      <canvas id="chartCanvas"></canvas>
+      <div id="hud">
+        <div><b>Ayuda</b></div>
+        <div id="hudText" style="margin-top:6px;color:var(--dim)">
+          Carga la carta (ya incluida) y calibra para habilitar cálculos.
+        </div>
+      </div>
+      <button id="sidebarSheetToggle" class="sheet-toggle" type="button"
+              aria-expanded="true" aria-controls="sidebar">Ocultar panel</button>
+    </section>
+  </main>
+
+  <!-- Elemento oculto para compatibilidad con statusText -->
+  <small id="statusText" style="display:none"></small>
+
+</div><!-- #chartView -->
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════════════════ -->
 <script>
   window.CHART_IMAGE = "power_assurance_chart.png";
 </script>
 <script src="aw139_pac_chart_config.js"></script>
+<script src="PAC_ENGINE_v4_PATCH.js"></script>
 <script src="app.js"></script>
+
+<script>
+/* ── LÓGICA DE DOS VISTAS ────────────────────────────────────
+   Se ejecuta DESPUÉS de que app.js inicializa sus listeners.
+   Intercepta el click de btnCompute para:
+   1) Ejecutar el cálculo original
+   2) Cambiar a la vista de gráfica
+   3) Actualizar el resumen en toolbar
+─────────────────────────────────────────────────────────────*/
+(function initDualView() {
+
+  const inputView  = document.getElementById('inputView');
+  const chartView  = document.getElementById('chartView');
+  const btnBack    = document.getElementById('btnBack');
+  const btnCompute = document.getElementById('btnCompute');
+  const toolbarSummary = document.getElementById('toolbarSummary');
+  const btnExportPdf   = document.getElementById('btnExportPdf');
+  const exportSpinner  = document.getElementById('exportSpinner');
+  const canvas         = document.getElementById('chartCanvas');
+
+  // ── Campos espejo en inputView ──────────────────────────
+  // app.js lee los IDs directamente del DOM — los inputs ya están
+  // en inputView con los IDs correctos. No necesitan duplicarse.
+
+  // ── Transición INPUT → GRÁFICA ──────────────────────────
+  // Reemplazamos el listener del btnCompute para añadir la transición.
+  // app.js ya añadió su propio listener con addEventListener;
+  // aquí añadimos el nuestro DESPUÉS para que se ejecute en orden.
+  btnCompute.addEventListener('click', () => {
+    // Esperar un tick para que app.js termine el cálculo y renderResults
+    requestAnimationFrame(() => {
+      showChartView();
+    });
+  });
+
+  function showChartView() {
+    inputView.classList.add('hidden');
+    chartView.classList.add('active');
+    // Disparar resize para que el canvas recalcule dimensiones
+    window.dispatchEvent(new Event('resize'));
+    updateToolbarSummary();
+  }
+
+  // ── Transición GRÁFICA → INPUT ───────────────────────────
+  btnBack.addEventListener('click', () => {
+    chartView.classList.remove('active');
+    inputView.classList.remove('hidden');
+  });
+
+  // ── Resumen en toolbar ────────────────────────────────────
+  function updateToolbarSummary() {
+    const tq  = document.getElementById('tq')?.value  || '—';
+    const alt = document.getElementById('alt')?.value || '—';
+    const oat = document.getElementById('oat')?.value || '—';
+    const eng = document.getElementById('engine')?.value || '?';
+    toolbarSummary.textContent =
+      `ENG ${eng} · TQ ${tq}% · PA ${alt}ft · OAT ${oat}°C`;
+  }
+
+  // ── Exportar PDF ─────────────────────────────────────────
+  // Genera un PDF en el browser capturando el canvas del nomograma
+  // y añadiendo la tabla de datos estilo el reporte de referencia.
+  btnExportPdf.addEventListener('click', () => {
+    exportPdf();
+  });
+
+  function exportPdf() {
+    // Verificar jsPDF disponible — si no, cargarlo dinámicamente
+    if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+      exportSpinner.style.display = 'inline';
+      btnExportPdf.disabled = true;
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      script.onload = () => doExport();
+      script.onerror = () => {
+        exportSpinner.style.display = 'none';
+        btnExportPdf.disabled = false;
+        alert('No se pudo cargar la librería de PDF. Verifica conexión.');
+      };
+      document.head.appendChild(script);
+    } else {
+      doExport();
+    }
+  }
+
+  function doExport() {
+    exportSpinner.style.display = 'inline';
+    btnExportPdf.disabled = true;
+
+    // Pequeño delay para que el spinner sea visible
+    setTimeout(() => {
+      try {
+        buildPdf();
+      } catch(e) {
+        console.error('PDF export error:', e);
+        alert('Error al generar PDF: ' + e.message);
+      } finally {
+        exportSpinner.style.display = 'none';
+        btnExportPdf.disabled = false;
+      }
+    }, 80);
+  }
+
+  function buildPdf() {
+    const jsPDF = window.jspdf?.jsPDF || window.jsPDF;
+    if (!jsPDF) throw new Error('jsPDF no disponible');
+
+    // ── Leer datos de inputs ────────────────────────────────
+    const eng = document.getElementById('engine')?.value || '?';
+    const tq  = parseFloat(document.getElementById('tq')?.value) || 0;
+    const itt = parseFloat(document.getElementById('itt')?.value) || 0;
+    const ng  = parseFloat(document.getElementById('ng')?.value) || 0;
+    const oat = parseFloat(document.getElementById('oat')?.value) || 0;
+    const alt = parseFloat(document.getElementById('alt')?.value) || 0;
+
+    // ── Leer resultados calculados ──────────────────────────
+    // overlay.computed expuesto por app.js a través del objeto global
+    // Lo leemos del DOM de resultados o del canvas overlay
+    let ittMax = null, ngMax = null, ittOk = null, ngOk = null;
+    try {
+      // calcPAC está disponible globalmente desde PAC_ENGINE_v4_PATCH.js
+      if (typeof calcPAC === 'function') {
+        const r = calcPAC(tq, alt, oat);
+        ittMax = r.itt_max;
+        ngMax  = r.ng_max;
+        ittOk  = itt <= ittMax + 5;
+        ngOk   = ng  <= ngMax  + 0.2;
+      }
+    } catch(e) { /* sin resultados */ }
+
+    const fmt1 = (v) => v == null ? '---' : v.toFixed(1);
+    const fmt0 = (v) => v == null ? '---' : Math.round(v).toString();
+    const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+    // ── Crear PDF A4 portrait ────────────────────────────────
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = 210, H = 297;
+    const margin = 14;
+
+    // ── Paleta de colores (inspirada en el PDF de referencia) ──
+    const C = {
+      bg:      [245, 247, 252],
+      border:  [180, 190, 210],
+      header:  [20,  30,  50],
+      gold:    [180, 140, 40],
+      teal:    [26,  130, 118],
+      text:    [20,  28,  46],
+      dim:     [100, 115, 140],
+      ok:      [30,  140, 60],
+      bad:     [200, 30,  30],
+      warn:    [200, 140, 0],
+      white:   [255, 255, 255],
+      rowA:    [240, 243, 250],
+      rowB:    [252, 253, 255],
+    };
+
+    const setFill   = (c) => pdf.setFillColor(...c);
+    const setStroke = (c) => pdf.setDrawColor(...c);
+    const setColor  = (c) => pdf.setTextColor(...c);
+    const setFont   = (f, s, sz) => { pdf.setFont(f, s); pdf.setFontSize(sz); };
+
+    // ── ENCABEZADO ───────────────────────────────────────────
+    setFill(C.header); pdf.rect(0, 0, W, 22, 'F');
+    setColor(C.white);
+    setFont('helvetica', 'bold', 22);
+    pdf.text('AW139', margin, 14);
+    setFont('helvetica', 'normal', 9);
+    pdf.setCharSpace(2);
+    pdf.text('POWER ASSURANCE CHECK', margin + 28, 14);
+    pdf.setCharSpace(0);
+
+    // Línea dorada bajo el header
+    setFill(C.gold); pdf.rect(0, 22, W, 1.2, 'F');
+
+    // ── DATOS DEL VUELO (fila superior) ─────────────────────
+    let y = 32;
+    setFill(C.bg); pdf.rect(margin, y, W - margin*2, 18, 'F');
+    setStroke(C.border); pdf.setLineWidth(0.3);
+    pdf.rect(margin, y, W - margin*2, 18, 'S');
+
+    // Matrícula placeholder
+    setFont('helvetica', 'normal', 7);
+    setColor(C.dim);
+    pdf.text('MATRÍCULA / REGISTRO', margin + 4, y + 5);
+    setFont('helvetica', 'bold', 11);
+    setColor(C.text);
+    pdf.text('FAC 0008 · Águila Uno', margin + 4, y + 12);
+
+    // Timestamp
+    const tsX = W - margin - 60;
+    setFont('helvetica', 'normal', 7);
+    setColor(C.dim);
+    pdf.text('TIMESTAMP', tsX, y + 5);
+    setFont('helvetica', 'bold', 11);
+    setColor(C.text);
+    pdf.text(ts, tsX, y + 12);
+
+    // ── TABLA DE DATOS ───────────────────────────────────────
+    y = 58;
+    const tblX = margin, tblW = W - margin * 2;
+    const colW = [28, 24, 28, 22, 28, 28, tblW - 158]; // Motor/Condiciones/NG/NG_max/TQ/ITT/ITT_max/Config
+    const rowH = 12;
+
+    // Cabeceras de tabla
+    const headers = ['', 'NG', 'TARGET\n(MAX NG)', 'TORQUE', 'ITT', 'TARGET\n(MAX ITT)', 'NR & CONFIG'];
+    setFill(C.header);
+    pdf.rect(tblX, y, tblW, rowH, 'F');
+    setColor(C.white);
+    setFont('helvetica', 'bold', 7);
+    let cx = tblX;
+    headers.forEach((h, i) => {
+      if (i === 0) { cx += colW[0]; return; } // primera col vacía
+      const lines = h.split('\n');
+      if (lines.length > 1) {
+        pdf.text(lines[0], cx + colW[i]/2, y + 4.5, { align: 'center' });
+        pdf.text(lines[1], cx + colW[i]/2, y + 8.5, { align: 'center' });
+      } else {
+        pdf.text(h, cx + colW[i]/2, y + rowH/2 + 1, { align: 'center' });
+      }
+      cx += colW[i];
+    });
+
+    // Línea vertical entre cabeceras
+    setStroke(C.border); pdf.setLineWidth(0.2);
+    cx = tblX;
+    headers.forEach((_, i) => {
+      if (i > 0) pdf.line(cx, y, cx, y + rowH);
+      cx += colW[i];
+    });
+
+    // Filas de datos: condiciones (izq) + ENG #1 + ENG #2
+    const rows = [
+      {
+        condLabel: `TEMPERATURE\n${oat}°C`,
+        engLabel: `ENG #${eng}`,
+        ng: fmt1(ng),
+        ng_max: fmt1(ngMax),
+        tq: fmt0(tq),
+        itt: `${fmt0(itt)}°C`,
+        itt_max: `${fmt0(ittMax)}°C`,
+        config: `100%\nEAPS OFF`,
+        active: true,
+      },
+      {
+        condLabel: `ELEVATION\n${fmt0(alt)}ft`,
+        engLabel: `ENG #${eng === '1' ? '2' : '1'}`,
+        ng: '--.-',
+        ng_max: fmt1(ngMax),
+        tq: fmt0(tq),
+        itt: '---°C',
+        itt_max: `${fmt0(ittMax)}°C`,
+        config: '',
+        active: false,
+      },
+    ];
+
+    const dataRowH = 16;
+    rows.forEach((row, ri) => {
+      const ry = y + rowH + ri * dataRowH;
+      setFill(ri % 2 === 0 ? C.rowA : C.rowB);
+      pdf.rect(tblX, ry, tblW, dataRowH, 'F');
+      setStroke(C.border); pdf.setLineWidth(0.2);
+      pdf.rect(tblX, ry, tblW, dataRowH, 'S');
+
+      // Col 0: condiciones (fondo oscuro en celda izquierda)
+      setFill(C.header);
+      pdf.rect(tblX, ry, colW[0], dataRowH, 'F');
+      setColor(C.white);
+      setFont('helvetica', 'bold', 7);
+      const condLines = row.condLabel.split('\n');
+      pdf.text(condLines[0], tblX + colW[0]/2, ry + 5, { align: 'center' });
+      setFont('helvetica', 'bold', 9);
+      pdf.text(condLines[1], tblX + colW[0]/2, ry + 11, { align: 'center' });
+
+      cx = tblX + colW[0];
+      const vals = [row.engLabel, row.ng + '%', row.ng_max + '%', row.tq + '%', row.itt, row.itt_max, row.config];
+      vals.forEach((v, ci) => {
+        const cw = colW[ci + 1];
+        if (ci === 0) {
+          // Etiqueta motor
+          setColor(C.dim);
+          setFont('helvetica', 'bold', 8);
+          pdf.text(v, cx + cw/2, ry + dataRowH/2 + 1.5, { align: 'center' });
+        } else if (ci === 1 || ci === 2) {
+          // NG
+          setColor(row.active ? (ngOk ? C.ok : C.bad) : C.dim);
+          setFont('helvetica', 'bold', 11);
+          pdf.text(v, cx + cw/2, ry + dataRowH/2 + 2, { align: 'center' });
+        } else if (ci === 3) {
+          // TQ (fila fusionada — centrado verticalmente en ambas filas)
+          if (ri === 0) {
+            setFill([230, 235, 245]);
+            pdf.rect(cx, y + rowH, cw, dataRowH * 2, 'F');
+            setColor(C.text);
+            setFont('helvetica', 'bold', 14);
+            pdf.text(v, cx + cw/2, y + rowH + dataRowH + 2, { align: 'center' });
+            setFont('helvetica', 'normal', 7);
+            setColor(C.dim);
+            pdf.text('%TQ', cx + cw/2, y + rowH + dataRowH + 7, { align: 'center' });
+          }
+        } else if (ci === 4) {
+          // ITT
+          setColor(row.active ? (ittOk ? C.ok : C.bad) : C.dim);
+          setFont('helvetica', 'bold', 11);
+          pdf.text(v, cx + cw/2, ry + dataRowH/2 + 2, { align: 'center' });
+        } else if (ci === 5) {
+          // ITT_max (fusionada)
+          if (ri === 0) {
+            setFill([230, 245, 235]);
+            pdf.rect(cx, y + rowH, cw, dataRowH * 2, 'F');
+            setColor(C.teal);
+            setFont('helvetica', 'bold', 13);
+            pdf.text(v, cx + cw/2, y + rowH + dataRowH + 2, { align: 'center' });
+          }
+        } else if (ci === 6) {
+          // Config
+          if (ri === 0) {
+            setColor(C.text);
+            setFont('helvetica', 'bold', 9);
+            const cfgLines = row.config.split('\n');
+            pdf.text(cfgLines[0], cx + cw/2, y + rowH + dataRowH - 1, { align: 'center' });
+            setFont('helvetica', 'normal', 8);
+            setColor(C.dim);
+            if (cfgLines[1]) pdf.text(cfgLines[1], cx + cw/2, y + rowH + dataRowH + 5, { align: 'center' });
+          }
+        }
+        cx += cw;
+      });
+
+      // Separadores verticales en filas de datos
+      cx = tblX + colW[0];
+      colW.slice(1).forEach((cw) => {
+        pdf.line(cx, ry, cx, ry + dataRowH);
+        cx += cw;
+      });
+    });
+
+    // ── BANNER DE DECISIÓN ───────────────────────────────────
+    y = y + rowH + rows.length * dataRowH + 6;
+    let bannerColor = C.warn, bannerText = '⚠  NO CONCLUYENTE';
+    if (ittOk != null && ngOk != null) {
+      if (ittOk && ngOk) { bannerColor = C.ok;  bannerText = '✓  DENTRO DE LÍMITES'; }
+      else               { bannerColor = C.bad; bannerText = '✗  LÍMITE EXCEDIDO'; }
+    }
+    setFill(bannerColor); pdf.rect(margin, y, tblW, 10, 'F');
+    setColor(C.white);
+    setFont('helvetica', 'bold', 11);
+    pdf.setCharSpace(1.5);
+    pdf.text(bannerText, W/2, y + 7, { align: 'center' });
+    pdf.setCharSpace(0);
+
+    // ── TÍTULO DE GRÁFICA ────────────────────────────────────
+    y += 16;
+    setFont('helvetica', 'bold', 8);
+    setColor(C.dim);
+    pdf.setCharSpace(1);
+    pdf.text('GRAPH OVERLAY', margin, y);
+    pdf.setCharSpace(0);
+    setFill(C.teal); pdf.rect(margin, y + 1.5, 24, 0.8, 'F');
+
+    // ── CAPTURA DEL CANVAS ────────────────────────────────────
+    y += 6;
+    const chartH = H - y - margin - 14;
+    const chartW = tblW;
+
+    try {
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      pdf.addImage(imgData, 'JPEG', margin, y, chartW, chartH);
+      // Marco sobre la gráfica
+      setStroke(C.border); pdf.setLineWidth(0.4);
+      pdf.rect(margin, y, chartW, chartH, 'S');
+    } catch(e) {
+      setFill(C.bg); pdf.rect(margin, y, chartW, chartH, 'F');
+      setFont('helvetica', 'italic', 9);
+      setColor(C.dim);
+      pdf.text('Gráfico no disponible', W/2, y + chartH/2, { align: 'center' });
+    }
+
+    // ── FOOTER ────────────────────────────────────────────────
+    const footerY = H - 9;
+    setFill(C.header); pdf.rect(0, H - 12, W, 12, 'F');
+    setFont('helvetica', 'normal', 7);
+    setColor([130, 145, 170]);
+    pdf.text('139G1580A001 · Figure 4-5 NR=100% EAPS OFF', margin, footerY);
+    pdf.text(`Generated by AW139 QRH · FAC 0008`, W/2, footerY, { align: 'center' });
+    pdf.text('ICN-39-A-155000-A-A0126-05003-A-04-1', W - margin, footerY, { align: 'right' });
+
+    // ── GUARDAR ────────────────────────────────────────────────
+    const fname = `PAC_ENG${eng}_${ts.replace(/[: ]/g,'-')}.pdf`;
+    pdf.save(fname);
+  }
+
+})();
+</script>
+
 </body>
 </html>

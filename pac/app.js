@@ -9,6 +9,13 @@
   const DEFAULT_CONFIG_VAR = qs.get('configVar') || 'AW139_PAC_DEFAULT_CONFIG';
   const CONFIG_JSON_URL = qs.get('config') || '';
   const LEGACY_COORD_SCALE = 0.79;
+  const PDF_TARGET_WIDTH = 2000;
+  const PDFJS_MODULE_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs';
+  const PDFJS_WORKER_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
+  const PAC_ENGINE_MODE = resolvePacEngineMode(
+    qs.get('pacEngine') || window.PAC_ENGINE || 'auto',
+    typeof window.calcPAC === 'function'
+  );
 
   const canvas = document.getElementById('chartCanvas');
   const ctx = canvas.getContext('2d');
@@ -61,7 +68,7 @@
   let config = normalizeConfig(loadConfig()) || emptyConfig();
   let img = new Image();
   let imageLoadError = null;
-  img.src = CHART_IMAGE_SRC;
+  let pdfJsModulePromise = null;
 
   // view transform
   let view = { scale: 1, tx: 0, ty: 0 };
@@ -132,6 +139,60 @@
       mode = localStorage.getItem('aw139-mode') || MODES.NIGHT;
     }
     applyMode(mode);
+  }
+
+  function isPdfSource(src) {
+    if (!src) return false;
+    return /\.pdf(?:$|[?#])/i.test(src);
+  }
+
+  async function ensurePdfJs() {
+    if (!pdfJsModulePromise) {
+      pdfJsModulePromise = import(PDFJS_MODULE_URL).then((mod) => {
+        const lib = mod?.GlobalWorkerOptions ? mod : (mod?.default || mod);
+        if (!lib?.getDocument || !lib?.GlobalWorkerOptions) {
+          throw new Error('pdfjs-dist no disponible');
+        }
+        lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+        return lib;
+      });
+    }
+    return pdfJsModulePromise;
+  }
+
+  async function loadPdfChartIntoImage(src) {
+    const pdfjs = await ensurePdfJs();
+    const task = pdfjs.getDocument({ url: src });
+    const pdf = await task.promise;
+    const page = await pdf.getPage(1);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const scale = Math.max(0.1, PDF_TARGET_WIDTH / Math.max(1, baseViewport.width));
+    const viewport = page.getViewport({ scale });
+    const temp = document.createElement('canvas');
+    temp.width = Math.max(1, Math.floor(viewport.width));
+    temp.height = Math.max(1, Math.floor(viewport.height));
+    const tempCtx = temp.getContext('2d');
+    if (!tempCtx) throw new Error('No se pudo crear canvas para PDF');
+    await page.render({ canvasContext: tempCtx, viewport }).promise;
+    img.src = temp.toDataURL('image/png');
+  }
+
+  function startChartLoad() {
+    if (!isPdfSource(CHART_IMAGE_SRC)) {
+      img.src = CHART_IMAGE_SRC;
+      return;
+    }
+    loadPdfChartIntoImage(CHART_IMAGE_SRC).catch(() => {
+      handleChartLoadError(`No se pudo cargar ${CHART_IMAGE_SRC}`);
+    });
+  }
+
+  function handleChartLoadError(msg) {
+    imageLoadError = msg || `No se pudo cargar ${CHART_IMAGE_SRC}`;
+    overlay = { points: [], segments: [], warnings: ['Error de imagen: la carta PAC no pudo cargarse.'], computed: null };
+    hudText.textContent = 'Error de carga de carta: verifica archivo local o parámetro ?chart=.';
+    refreshStatus();
+    draw();
   }
 
   // ---------- helpers ----------
@@ -289,15 +350,51 @@
     return true;
   }
 
-  // Corrige una calibración histórica incorrecta del eje ITT (400..900 -> 500..800).
+  function maybeResetLegacyScaledConfigForCurrentImage() {
+    if (CONFIG_JSON_URL) return false;
+    if (!img?.complete || !config || !isPdfSource(CHART_IMAGE_SRC)) return false;
+    const scaledFor = config?.meta?.legacyScaledForImage;
+    if (!scaledFor) return false;
+    const currentImage = `${img.width}x${img.height}`;
+    if (scaledFor === currentImage) return false;
+    const bundled = normalizeConfig(window[DEFAULT_CONFIG_VAR]);
+    if (!bundled) return false;
+    config = bundled;
+    saveConfig();
+    return true;
+  }
+
+  function normalizeChartImageName(src) {
+    if (!src) return '';
+    const raw = String(src).split(/[?#]/)[0];
+    const parts = raw.split('/');
+    return (parts[parts.length - 1] || '').toLowerCase();
+  }
+
+  function maybeRebaseConfigForChartSource() {
+    if (CONFIG_JSON_URL) return false;
+    const bundled = normalizeConfig(window[DEFAULT_CONFIG_VAR]);
+    if (!bundled || !config) return false;
+    const configImageName = normalizeChartImageName(config.image || '');
+    const chartImageName = normalizeChartImageName(CHART_IMAGE_SRC);
+    if (!configImageName || !chartImageName) return false;
+    if (configImageName === chartImageName) return false;
+    config = bundled;
+    saveConfig();
+    return true;
+  }
+
+  // Corrige calibraciones históricas incorrectas del eje ITT (400..900 o 450..850 -> 500..800).
   function maybeAutoFixIttAxisRange() {
     const itt = config?.axes?.itt_x;
     if (!itt || !Number.isFinite(itt.v1) || !Number.isFinite(itt.v2)) return false;
 
     const min = Math.min(itt.v1, itt.v2);
     const max = Math.max(itt.v1, itt.v2);
-    const looksLegacyIttRange = Math.abs(min - 400) < 1e-6 && Math.abs(max - 900) < 1e-6;
-    if (!looksLegacyIttRange) return false;
+    let previousRange = null;
+    if (Math.abs(min - 400) < 1e-6 && Math.abs(max - 900) < 1e-6) previousRange = '400-900';
+    if (Math.abs(min - 450) < 1e-6 && Math.abs(max - 850) < 1e-6) previousRange = '450-850';
+    if (!previousRange) return false;
 
     const ascending = itt.v2 >= itt.v1;
     itt.v1 = ascending ? 500 : 800;
@@ -305,7 +402,7 @@
     config.meta = {
       ...(config.meta || {}),
       ittAxisAutoFixed: new Date().toISOString(),
-      ittAxisPreviousRange: '400-900',
+      ittAxisPreviousRange: previousRange,
       ittAxisCurrentRange: '500-800',
     };
     saveConfig();
@@ -377,7 +474,8 @@
         ng_max: computed.NG_max,
         itt_ok: computed.ittOk,
         ng_ok: computed.ngOk,
-        concluyente: computed.concluyente
+        concluyente: computed.concluyente,
+        calc_engine: computed.calcEngine
       },
       config_version: config.version,
       config_image: config.image
@@ -458,9 +556,32 @@
     if (!p.p1.bbox || !p.itt.bbox || !p.ng.bbox) return false;
     if (!config.axes.p1_x || !config.axes.itt_x || !config.axes.ng_x) return false;
     if (config.lines.altitude.length < 2) return false;
-    if (config.lines.oat_itt.length < 2) return false;
-    if (config.lines.oat_ng.length < 2) return false;
+    if (PAC_ENGINE_MODE !== 'v4') {
+      if (config.lines.oat_itt.length < 2) return false;
+      if (config.lines.oat_ng.length < 2) return false;
+    }
     return true;
+  }
+
+  function resolvePacEngineMode(requested, hasV4) {
+    const mode = String(requested || '').trim().toLowerCase();
+    if (mode === 'legacy') return 'legacy';
+    if (mode === 'v4') return hasV4 ? 'v4' : 'legacy';
+    if (mode === 'auto' || !mode) return hasV4 ? 'v4' : 'legacy';
+    return hasV4 ? 'v4' : 'legacy';
+  }
+
+  function readPacLimitsV4(TQ, ALT, OAT) {
+    if (PAC_ENGINE_MODE !== 'v4') return null;
+    if (typeof window.calcPAC !== 'function') return null;
+    try {
+      const result = window.calcPAC(TQ, ALT, OAT);
+      if (!result) return null;
+      if (!Number.isFinite(result.itt_max) || !Number.isFinite(result.ng_max)) return null;
+      return { ITT_max: result.itt_max, NG_max: result.ng_max };
+    } catch (err) {
+      return null;
+    }
   }
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
@@ -602,7 +723,7 @@
     for (const s of overlay.segments) {
       const a = toCanvas(s.a), b = toCanvas(s.b);
       ctx.lineWidth = Number.isFinite(s.width) ? s.width : 2;
-      ctx.setLineDash(Array.isArray(s.dash) ? s.dash : [6, 6]);
+      ctx.setLineDash(Array.isArray(s.dash) ? s.dash : []);
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
@@ -1275,7 +1396,11 @@
     overlay = { points: [], segments: [], warnings: [], computed: null };
 
     if (!isReady()) {
-      overlay.warnings.push('Calibración incompleta: define paneles, ejes X y al menos 2 líneas de ALT y 2 de OAT (ITT y NG).');
+      if (PAC_ENGINE_MODE === 'v4') {
+        overlay.warnings.push('Calibración incompleta: define paneles, ejes X y al menos 2 líneas de ALT.');
+      } else {
+        overlay.warnings.push('Calibración incompleta: define paneles, ejes X y al menos 2 líneas de ALT y 2 de OAT (ITT y NG).');
+      }
       renderResults(null);
       showDecisionBanner(null);
       draw();
@@ -1371,71 +1496,136 @@
       }
     }
 
-    // Step 3: ITT max via OAT lines in ITT panel (solve x at y_transfer, interpolate, convert x->value)
-    const oatIttBracket = bracketLinesByValue(config.lines.oat_itt, OAT);
     let ITT_max = null;
-    let ittMaxPoint = null;
-    if (!oatIttBracket) {
-      warnings.push('Faltan líneas OAT en panel ITT.');
-    } else if (oatIttBracket.out) {
-      warnings.push('OAT fuera del rango de la carta (panel ITT).');
-      outOfRange = true;
-    } else if (y_transfer != null && yInItt) {
-      const x_low = solveXAtY(oatIttBracket.low, y_transfer);
-      const x_high = solveXAtY(oatIttBracket.high, y_transfer);
-      if (x_low == null || x_high == null) warnings.push('No se pudo resolver X en panel ITT (línea no cubre ese Y).');
-      else {
-        const x_itt = x_low + oatIttBracket.u * (x_high - x_low);
-        ITT_max = panelXPxToValue('itt', x_itt);
-        const ittPt = clampPointToPanel('itt', x_itt, y_transfer);
-        if (ittPt.clamped) {
-          warnings.push('El punto ITT calculado quedó fuera del panel y fue ajustado al límite.');
-          outOfRange = true;
-        }
-        ittMaxPoint = { x: ittPt.x, y: ittPt.y };
-        overlay.points.push({
-          x: ittPt.x,
-          y: ittPt.y,
-          label: `ITT max ${fmtCompact(ITT_max, 0)}`,
-          stroke: cssVar('--pac-ok', '#2adf60'),
-          fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
-          radius: 6,
-          width: 2,
-        });
-      }
-    }
-
-    // Step 4: NG max via OAT lines in NG panel
-    const oatNgBracket = bracketLinesByValue(config.lines.oat_ng, OAT);
     let NG_max = null;
+    let ittMaxPoint = null;
     let ngMaxPoint = null;
-    if (!oatNgBracket) {
-      warnings.push('Faltan líneas OAT en panel NG.');
-    } else if (oatNgBracket.out) {
-      warnings.push('OAT fuera del rango de la carta (panel NG).');
-      outOfRange = true;
-    } else if (y_transfer != null && yInNg) {
-      const x_low = solveXAtY(oatNgBracket.low, y_transfer);
-      const x_high = solveXAtY(oatNgBracket.high, y_transfer);
-      if (x_low == null || x_high == null) warnings.push('No se pudo resolver X en panel NG (línea no cubre ese Y).');
-      else {
-        const x_ng = x_low + oatNgBracket.u * (x_high - x_low);
-        NG_max = panelXPxToValue('ng', x_ng);
-        const ngPt = clampPointToPanel('ng', x_ng, y_transfer);
-        if (ngPt.clamped) {
-          warnings.push('El punto NG calculado quedó fuera del panel y fue ajustado al límite.');
-          outOfRange = true;
+    let calcEngine = 'legacy';
+
+    // Step 3/4 (v4): límites directos por tabla PAC.
+    const limitsV4 = readPacLimitsV4(TQ, ALT, OAT);
+    if (limitsV4) {
+      calcEngine = 'v4';
+      ITT_max = limitsV4.ITT_max;
+      NG_max = limitsV4.NG_max;
+
+      if (!inRange(ALT, -1000, 14000)) {
+        warnings.push('ALT fuera del rango del motor v4; se aplicó clamp al rango de tabla.');
+        outOfRange = true;
+      }
+      if (!inRange(OAT, -40, 50)) {
+        warnings.push('OAT fuera del rango del motor v4; se aplicó clamp al rango de tabla.');
+        outOfRange = true;
+      }
+
+      if (y_transfer != null && yInItt) {
+        const xIttV4 = panelXValueToPx('itt', ITT_max);
+        if (xIttV4 == null) {
+          warnings.push('No se pudo mapear ITT max (v4) al eje del panel ITT.');
+        } else {
+          const ittPt = clampPointToPanel('itt', xIttV4, y_transfer);
+          if (ittPt.clamped) {
+            warnings.push('El punto ITT max (v4) quedó fuera del panel y fue ajustado al límite.');
+            outOfRange = true;
+          }
+          ittMaxPoint = { x: ittPt.x, y: ittPt.y };
+          overlay.points.push({
+            x: ittPt.x,
+            y: ittPt.y,
+            label: `ITT max ${fmtCompact(ITT_max, 0)}`,
+            stroke: cssVar('--pac-ok', '#2adf60'),
+            fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
+            radius: 6,
+            width: 2,
+          });
         }
-        ngMaxPoint = { x: ngPt.x, y: ngPt.y };
-        overlay.points.push({
-          x: ngPt.x,
-          y: ngPt.y,
-          label: `NG max ${fmtCompact(NG_max, 1)}`,
-          stroke: cssVar('--pac-ok', '#2adf60'),
-          fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
-          radius: 6,
-          width: 2,
-        });
+      }
+
+      if (y_transfer != null && yInNg) {
+        const xNgV4 = panelXValueToPx('ng', NG_max);
+        if (xNgV4 == null) {
+          warnings.push('No se pudo mapear NG max (v4) al eje del panel NG.');
+        } else {
+          const ngPt = clampPointToPanel('ng', xNgV4, y_transfer);
+          if (ngPt.clamped) {
+            warnings.push('El punto NG max (v4) quedó fuera del panel y fue ajustado al límite.');
+            outOfRange = true;
+          }
+          ngMaxPoint = { x: ngPt.x, y: ngPt.y };
+          overlay.points.push({
+            x: ngPt.x,
+            y: ngPt.y,
+            label: `NG max ${fmtCompact(NG_max, 1)}`,
+            stroke: cssVar('--pac-ok', '#2adf60'),
+            fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
+            radius: 6,
+            width: 2,
+          });
+        }
+      }
+    } else {
+      // Step 3: ITT max via OAT lines in ITT panel (legacy por geometría de carta).
+      const oatIttBracket = bracketLinesByValue(config.lines.oat_itt, OAT);
+      if (!oatIttBracket) {
+        warnings.push('Faltan líneas OAT en panel ITT.');
+      } else if (oatIttBracket.out) {
+        warnings.push('OAT fuera del rango de la carta (panel ITT).');
+        outOfRange = true;
+      } else if (y_transfer != null && yInItt) {
+        const x_low = solveXAtY(oatIttBracket.low, y_transfer);
+        const x_high = solveXAtY(oatIttBracket.high, y_transfer);
+        if (x_low == null || x_high == null) warnings.push('No se pudo resolver X en panel ITT (línea no cubre ese Y).');
+        else {
+          const x_itt = x_low + oatIttBracket.u * (x_high - x_low);
+          ITT_max = panelXPxToValue('itt', x_itt);
+          const ittPt = clampPointToPanel('itt', x_itt, y_transfer);
+          if (ittPt.clamped) {
+            warnings.push('El punto ITT calculado quedó fuera del panel y fue ajustado al límite.');
+            outOfRange = true;
+          }
+          ittMaxPoint = { x: ittPt.x, y: ittPt.y };
+          overlay.points.push({
+            x: ittPt.x,
+            y: ittPt.y,
+            label: `ITT max ${fmtCompact(ITT_max, 0)}`,
+            stroke: cssVar('--pac-ok', '#2adf60'),
+            fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
+            radius: 6,
+            width: 2,
+          });
+        }
+      }
+
+      // Step 4: NG max via OAT lines in NG panel (legacy por geometría de carta).
+      const oatNgBracket = bracketLinesByValue(config.lines.oat_ng, OAT);
+      if (!oatNgBracket) {
+        warnings.push('Faltan líneas OAT en panel NG.');
+      } else if (oatNgBracket.out) {
+        warnings.push('OAT fuera del rango de la carta (panel NG).');
+        outOfRange = true;
+      } else if (y_transfer != null && yInNg) {
+        const x_low = solveXAtY(oatNgBracket.low, y_transfer);
+        const x_high = solveXAtY(oatNgBracket.high, y_transfer);
+        if (x_low == null || x_high == null) warnings.push('No se pudo resolver X en panel NG (línea no cubre ese Y).');
+        else {
+          const x_ng = x_low + oatNgBracket.u * (x_high - x_low);
+          NG_max = panelXPxToValue('ng', x_ng);
+          const ngPt = clampPointToPanel('ng', x_ng, y_transfer);
+          if (ngPt.clamped) {
+            warnings.push('El punto NG calculado quedó fuera del panel y fue ajustado al límite.');
+            outOfRange = true;
+          }
+          ngMaxPoint = { x: ngPt.x, y: ngPt.y };
+          overlay.points.push({
+            x: ngPt.x,
+            y: ngPt.y,
+            label: `NG max ${fmtCompact(NG_max, 1)}`,
+            stroke: cssVar('--pac-ok', '#2adf60'),
+            fill: cssVar('--pac-overlay-point-fill', 'rgba(255,255,255,0.95)'),
+            radius: 6,
+            width: 2,
+          });
+        }
       }
     }
 
@@ -1450,9 +1640,9 @@
       const transferColor = cssVar('--pac-overlay-transfer', 'rgba(255,200,80,0.9)');
       const maxColor = cssVar('--pac-ok', '#2adf60');
       const indicatedColor = cssVar('--pac-overlay-point-stroke', 'rgba(255,80,80,0.9)');
-      const transferDash = [8, 6];
-      const maxDash = [12, 4];
-      const indDash = [4, 5];
+      const transferDash = [];
+      const maxDash = [];
+      const indDash = [];
 
       // Punto de transferencia en panel 1.
       overlay.points.push({
@@ -1563,6 +1753,16 @@
             radius: 6,
             width: 2,
           });
+          if (pItt) {
+            const yTopItt = Math.min(pItt[1], pItt[3]);
+            overlay.segments.push({
+              a: { x: ittIndPt.x, y: ittIndPt.y },
+              b: { x: ittIndPt.x, y: yTopItt },
+              style: indicatedColor,
+              dash: indDash,
+              width: 2,
+            });
+          }
         }
       }
       if (yInNg) {
@@ -1607,6 +1807,7 @@
 
     const computed = {
       engine: els.engine.value,
+      calcEngine,
       TQ, ITT_ind, NG_ind, OAT, ALT,
       ITT_max, NG_max,
       ittOk, ngOk,
@@ -1682,6 +1883,7 @@
     const ngPam = (r.NG_max == null) ? '—' : (r.NG_max - r.NG_ind).toFixed(1);
     const safeTolItt = escapeHtml(fmt(nearIttBand, 1));
     const safeTolNg = escapeHtml(fmt(nearNgBand, 1));
+    const safeCalcEngine = escapeHtml((r.calcEngine || 'legacy').toUpperCase());
     els.results.innerHTML = `
       <div class="metric-card">
         <div class="metric-head">
@@ -1704,6 +1906,8 @@
       <div class="row"><label>Estado NG (criterio)</label><div>${badge(r.ngOk)}</div></div>
       <hr/>
       <small>
+        Motor de cálculo: ${safeCalcEngine}.
+        <br/>
         Tolerancias: ITT ${safeTolItt}°C, NG${safeTolNg}%.
         <br/>Semaforo visual: Verde dentro, Amarillo cerca del limite (±${safeTolItt}°C ITT / ±${safeTolNg}% NG), Rojo excedido.
         ${r.concluyente ? '' : '<br/>Input fuera del rango de la carta o calibración incompleta; revisa manualmente.'}
@@ -1729,7 +1933,8 @@
       ng_max: overlay.computed.NG_max,
       itt_ok: overlay.computed.ittOk,
       ng_ok: overlay.computed.ngOk,
-      concluyente: overlay.computed.concluyente
+      concluyente: overlay.computed.concluyente,
+      calc_engine: overlay.computed.calcEngine
     } : null;
     const name = (els.readingName?.value || '').trim() || `PAC_${new Date().toISOString().replace(/[:.]/g, '-')}`;
     const item = {
@@ -2132,10 +2337,16 @@
   (async () => {
     const loadedUrl = await loadUrlConfigIfNeeded();
     const loadedBundled = loadedUrl ? false : loadBundledConfigIfNeeded();
+    const rebasedForChartNow = maybeRebaseConfigForChartSource();
     const autoFixedIttNow = maybeAutoFixIttAxisRange();
     const autoScaledNow = img.complete ? maybeAutoScaleLegacyConfigToImage() : false;
     if (loadedUrl || loadedBundled) {
       hudText.textContent = 'Configuracion calibrada cargada automaticamente.';
+      refreshStatus();
+      draw();
+    }
+    if (rebasedForChartNow) {
+      hudText.textContent = 'Calibracion restablecida para la carta activa.';
       refreshStatus();
       draw();
     }
@@ -2153,6 +2364,8 @@
 
   img.onload = () => {
     imageLoadError = null;
+    const rebasedForChart = maybeRebaseConfigForChartSource();
+    const resetLegacyScaled = maybeResetLegacyScaledConfigForCurrentImage();
     const autoFixedItt = maybeAutoFixIttAxisRange();
     const autoScaled = maybeAutoScaleLegacyConfigToImage();
     // fit view to screen
@@ -2162,6 +2375,14 @@
     view.scale = Math.min(sx, sy);
     view.tx = (rect.width - img.width * view.scale) / 2;
     view.ty = (rect.height - img.height * view.scale) / 2;
+    if (resetLegacyScaled) {
+      hudText.textContent = 'Calibracion restablecida para la carta PDF actual.';
+      refreshStatus();
+    }
+    if (rebasedForChart) {
+      hudText.textContent = 'Calibracion restablecida para la carta activa.';
+      refreshStatus();
+    }
     if (autoScaled) {
       hudText.textContent = 'Configuracion ajustada automaticamente a la resolucion de la carta.';
       refreshStatus();
@@ -2174,12 +2395,10 @@
   };
 
   img.onerror = () => {
-    imageLoadError = `No se pudo cargar ${CHART_IMAGE_SRC}`;
-    overlay = { points: [], segments: [], warnings: ['Error de imagen: la carta PAC no pudo cargarse.'], computed: null };
-    hudText.textContent = 'Error de carga de carta: verifica archivo local o parámetro ?chart=.';
-    refreshStatus();
-    draw();
+    handleChartLoadError(`No se pudo cargar ${CHART_IMAGE_SRC}`);
   };
+
+  startChartLoad();
 
   window.addEventListener('resize', () => {
     syncResponsiveSheet(false);
