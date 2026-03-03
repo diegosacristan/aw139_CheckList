@@ -1,5 +1,8 @@
 ﻿{
     "versions": {
+        "1.1.10": [
+            "Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos."
+        ],
         "1.1.9": [
             "PAC vuelve a usar power_assurance_chart.png como carta por defecto para mantener calibracion operacional.",
             "Se agrego rebase automatico de calibracion cuando la carta activa no coincide con la calibracion guardada.",
