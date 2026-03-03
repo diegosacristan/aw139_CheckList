@@ -1,0 +1,108 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AW139 Safety Briefings</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="theme-night">
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-title">Safety Briefings</div>
+        <div class="brand-sub">Mission / Crew / Pax / Debrief - Offline first</div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn" data-action="open-tem-modal">Log Threat/Error</button>
+        <button type="button" class="btn primary" data-action="export-report">Export</button>
+      </div>
+    </header>
+
+    <main class="app-main" id="app"></main>
+  </div>
+
+  <button type="button" class="btn primary tem-fab" data-action="open-tem-modal">Log Threat/Error</button>
+
+  <div id="tem-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tem-modal-title">
+      <div class="modal-head">
+        <div class="card-title" id="tem-modal-title">TEM Quick Log</div>
+        <div class="card-sub">Amenaza / Error / UAS + FACDEE opcional</div>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <label class="field">
+            <span>Fase</span>
+            <select id="tem_phase">
+              <option value="PREFLIGHT">PREFLIGHT</option>
+              <option value="START">START</option>
+              <option value="TAKEOFF">TAKEOFF</option>
+              <option value="CRUISE">CRUISE</option>
+              <option value="APPROACH">APPROACH</option>
+              <option value="LANDING">LANDING</option>
+              <option value="SHUTDOWN">SHUTDOWN</option>
+              <option value="POST">POST</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Severidad</span>
+            <select id="tem_severity">
+              <option value="LOW">LOW</option>
+              <option value="MED">MED</option>
+              <option value="HIGH">HIGH</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Threat</span>
+          <input id="tem_threat" type="text" />
+        </label>
+
+        <label class="field">
+          <span>Error</span>
+          <input id="tem_error" type="text" />
+        </label>
+
+        <label class="field">
+          <span>UAS</span>
+          <input id="tem_uas" type="text" />
+        </label>
+
+        <label class="field">
+          <span>Recovery Action</span>
+          <textarea id="tem_recovery"></textarea>
+        </label>
+
+        <div class="card" style="margin-top:10px; box-shadow:none;">
+          <div class="card-head">
+            <div>
+              <div class="card-title" style="font-size:18px;">FACDEE (Opcional)</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <label class="field"><span>Factor</span><input id="f_factor" type="text" /></label>
+              <label class="field"><span>Alternatives</span><input id="f_alt" type="text" /></label>
+              <label class="field"><span>Consequences</span><input id="f_cons" type="text" /></label>
+              <label class="field"><span>Decision</span><input id="f_dec" type="text" /></label>
+              <label class="field"><span>Execution</span><input id="f_exec" type="text" /></label>
+              <label class="field"><span>Evaluation</span><input id="f_eval" type="text" /></label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" data-action="close-tem-modal">Cancelar</button>
+        <button type="button" class="btn primary" data-action="save-tem-log">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./templates.js"></script>
+  <script src="./db.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

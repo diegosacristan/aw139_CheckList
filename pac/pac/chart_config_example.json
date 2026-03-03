@@ -1,0 +1,23 @@
+﻿{
+  "version": "2.0",
+  "image": "power_assurance_chart.png",
+  "panels": {
+    "p1": { "name": "TQ vs Pressure Alt", "bbox": null },
+    "itt": { "name": "Max ITT", "bbox": null },
+    "ng": { "name": "Max NG", "bbox": null }
+  },
+  "axes": {
+    "p1_x": null,
+    "itt_x": null,
+    "ng_x": null
+  },
+  "lines": {
+    "altitude": [],
+    "oat_itt": [],
+    "oat_ng": []
+  },
+  "tolerances": {
+    "itt": 5,
+    "ng": 0.2
+  }
+}
