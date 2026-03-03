@@ -1,5 +1,10 @@
 ﻿{
     "versions": {
+        "1.1.9": [
+            "PAC vuelve a usar power_assurance_chart.png como carta por defecto para mantener calibracion operacional.",
+            "Se agrego rebase automatico de calibracion cuando la carta activa no coincide con la calibracion guardada.",
+            "Se corrigio la linea vertical de ITT indicado en la graficacion del modulo PAC."
+        ],
         "1.1.8": [
             "Se forzó la actualización del Service Worker mediante cambio de firma interna (byte-check).",
             "Se implementó estrategia Network-First para archivos core (index.html, config.js) para evitar bloqueos de caché en el futuro.",
