@@ -1,5 +1,14 @@
 ﻿{
     "versions": {
+        "1.1.12": [
+            "Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos."
+        ],
+        "1.1.11": [
+            "Rediseño visual premium estilo Apple aplicado al index principal con mejoras de motion, profundidad y fluidez.",
+            "Safety Briefings se mueve al primer lugar del menu lateral e incorpora hub de briefings con iconografia y retorno al menu.",
+            "Se actualiza splash screen para alinear imagen, jerarquia visual y atmosfera con la nueva estetica.",
+            "Se incrementa APP_VERSION y se incluye styles_apple.css en precache para forzar actualizacion en todos los dispositivos."
+        ],
         "1.1.10": [
             "Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos."
         ],

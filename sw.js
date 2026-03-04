@@ -1,5 +1,5 @@
 // AW139 Checklist - Service Worker
-// SW_VERSION: 1.1.10
+// SW_VERSION: 1.1.12
 
 // Cache version is driven by APP_VERSION via sw.js?v=<app-version>
 
@@ -14,6 +14,7 @@ const ASSETS = [
   './config.js',
   './changelog.json',
   './styles.css',
+  './styles_apple.css',
   './app.js',
   './manifest.json',
   './favicon.ico',
@@ -38,7 +39,9 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 

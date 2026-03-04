@@ -3944,11 +3944,14 @@ function showUpdateBanner() {
   if (updateBanner) updateBanner.classList.add('show');
 }
 
+function activatePendingSW() {
+  if (!pendingSW) return;
+  pendingSW.postMessage({ type: 'SKIP_WAITING' });
+}
+
 if (updateBtn) {
   updateBtn.addEventListener('click', () => {
-    if (pendingSW) {
-      pendingSW.postMessage({ type: 'SKIP_WAITING' });
-    }
+    activatePendingSW();
   });
 }
 
@@ -3974,9 +3977,12 @@ if ('serviceWorker' in navigator) {
     const swUrl = `./sw.js?v=${encodeURIComponent(APP_VERSION)}`;
     navigator.serviceWorker.register(swUrl)
       .then(reg => {
+        reg.update().catch(() => {});
+
         if (reg.waiting) {
           pendingSW = reg.waiting;
           showUpdateBanner();
+          activatePendingSW();
         }
 
         reg.addEventListener('updatefound', () => {
@@ -3986,6 +3992,7 @@ if ('serviceWorker' in navigator) {
             if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
               pendingSW = newSW;
               showUpdateBanner();
+              activatePendingSW();
             }
           });
         });
