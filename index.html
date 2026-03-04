@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>AW139 ÁGUILA 1 – Checklist</title>
 
 <!-- --- PWA MANIFEST --- -->
@@ -745,8 +745,11 @@
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 18px;
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100dvh;
     overflow: hidden;
+    overscroll-behavior: none;
   }
 
   .update-banner {
@@ -792,7 +795,7 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    overflow-y: auto;
+    overflow: hidden;
     z-index: 10;
   }
 
@@ -3923,12 +3926,73 @@ function initUIFloatingMenu() {
   applyInitialPos();
 }
 
+function initViewportStability() {
+  const viewportMeta = document.querySelector('meta[name="viewport"]');
+  const LOCKED_VIEWPORT = 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+
+  const applyViewportLock = () => {
+    if (viewportMeta && viewportMeta.getAttribute('content') !== LOCKED_VIEWPORT) {
+      viewportMeta.setAttribute('content', LOCKED_VIEWPORT);
+    }
+  };
+
+  const normalizeViewport = () => {
+    applyViewportLock();
+    if (document.scrollingElement) {
+      document.scrollingElement.scrollLeft = 0;
+    }
+    if (window.scrollX !== 0) {
+      window.scrollTo(0, window.scrollY || 0);
+    }
+    if (window.visualViewport && Math.abs(window.visualViewport.scale - 1) > 0.01) {
+      applyViewportLock();
+    }
+  };
+
+  let rafId = 0;
+  const scheduleNormalize = () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      rafId = 0;
+      normalizeViewport();
+    });
+  };
+
+  ['pageshow', 'resize', 'orientationchange', 'focus'].forEach((evt) => {
+    window.addEventListener(evt, scheduleNormalize, { passive: true });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      scheduleNormalize();
+      setTimeout(scheduleNormalize, 80);
+    }
+  });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', scheduleNormalize, { passive: true });
+  }
+
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((evt) => {
+    document.addEventListener(evt, (event) => {
+      event.preventDefault();
+    }, { passive: false });
+  });
+
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+
+  scheduleNormalize();
+}
+
 // Restaurar modo guardado al cargar
 (function initMode() {
   const saved = localStorage.getItem('aw139-mode') || MODES.NIGHT;
   applyMode(saved);
 })();
 
+initViewportStability();
 initUIPrefs();
 initUIFloatingMenu();
 initOrganicLighting();

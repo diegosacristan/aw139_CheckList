@@ -1,0 +1,23 @@
+{
+  "name": "AW139 Checklist — Trial Edition",
+  "short_name": "AW139 Check",
+  "description": "AW139  Checklist — Trial Trial Version",
+  "start_url": "index_apple_trial.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0a0d14",
+  "theme_color": "#0a0d14",
+  "lang": "es",
+  "categories": [
+    "aviation",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "civilian_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

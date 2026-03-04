@@ -1,5 +1,10 @@
 ﻿{
     "versions": {
+        "1.1.18": [
+            "Se fija la barra lateral en DIA y NOCHE con ancho operacional para iPad, distribucion vertical completa y sin desplazamiento lateral.",
+            "Se corrige la inestabilidad de zoom/posicion al reingresar a la app con bloqueo de viewport y normalizacion al volver desde segundo plano.",
+            "Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos."
+        ],
         "1.1.17": [
             "Se reajusta la barra lateral para mejor aprovechamiento horizontal y vertical en iPad, corrigiendo escala de logo y etiquetas.",
             "Se corrige modo NOCHE para eliminar fondos claros residuales y recuperar continuidad visual oscura en todos los apartados.",
