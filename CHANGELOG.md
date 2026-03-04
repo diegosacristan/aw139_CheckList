@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.17
+- Se reajusta la barra lateral para mejor aprovechamiento horizontal y vertical en iPad, corrigiendo escala de logo y etiquetas.
+- Se corrige modo NOCHE para eliminar fondos claros residuales y recuperar continuidad visual oscura en todos los apartados.
+- Se elimina el highlight conflictivo en DIA/NOCHE y se reemplaza el resaltado critico por una variante legible sin tono cafe.
+- Safety Briefings en NVG queda alineado al mismo layout de DIA/NOCHE y se actualiza iconografia con enfoque aeronautico sobrio.
+- Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos.
+
 ## 1.1.16
 - Resumen 1.1.13 a 1.1.16: mejora integral de interfaz para iPad con rediseño premium, ajustes de contraste y estabilidad visual por modo.
 - Safety Briefings: hub optimizado con iconografía, ocultamiento de CHECK ALL y RESET en menú, y botón de regreso integrado en barra de acciones.

@@ -1,5 +1,5 @@
 // AW139 Checklist - Service Worker
-// SW_VERSION: 1.1.16
+// SW_VERSION: 1.1.17
 
 // Cache version is driven by APP_VERSION via sw.js?v=<app-version>
 
