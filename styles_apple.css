@@ -1351,6 +1351,7 @@ html:not([data-mode]) .op-indicator::before {
 
 html:not([data-mode]) .cl-table tr[onclick] td::after,
 html[data-mode="day"] .cl-table tr[onclick] td::after,
+html[data-mode="night"] .cl-table tr[onclick] td::after,
 html[data-mode="nvg"] .cl-table tr[onclick] td::after {
   display: none !important;
 }
@@ -1613,10 +1614,7 @@ html[data-mode="night"] {
 }
 
 html[data-mode="night"] body {
-  background:
-    radial-gradient(1150px 560px at 92% -10%, rgba(110, 162, 246, 0.18), transparent 70%),
-    radial-gradient(980px 540px at -8% 108%, rgba(214, 172, 86, 0.12), transparent 72%),
-    linear-gradient(160deg, #070f1e, #0c162b 55%, #0d1830);
+  background: linear-gradient(160deg, #070f1e, #0b1528 56%, #0b1630);
   color: #eaf2ff;
 }
 
@@ -1675,11 +1673,11 @@ html[data-mode="night"] .mode-btn .m-label {
 }
 
 html[data-mode="night"] #content {
-  background: linear-gradient(180deg, #0b1426, #0d1629 50%, #0b1426) !important;
+  background: #0a1428 !important;
 }
 
 html[data-mode="night"] .section-panel {
-  background: transparent !important;
+  background: #0a1428 !important;
 }
 
 html[data-mode="night"] .cl-table tr.checked td {
@@ -1691,6 +1689,20 @@ html[data-mode="night"] .cl-table tr.checked td {
 html[data-mode="night"] .cl-table tr.checked .item-name {
   color: #b9c9e5 !important;
   opacity: 0.9 !important;
+}
+
+html[data-mode="night"] #main {
+  background: #0a1428 !important;
+}
+
+html[data-mode="night"] body::before,
+html[data-mode="night"] body::after,
+html[data-mode="night"] #main::before,
+html[data-mode="night"] #topbar::before,
+html[data-mode="night"] .op-indicator::before,
+html[data-mode="night"] .cl-table tr[onclick]::after,
+html[data-mode="night"] .cl-table tr[onclick] td::after {
+  display: none !important;
 }
 
 /* Day mode operational amber contrast (sunlight + vibration readability) */

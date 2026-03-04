@@ -2643,7 +2643,7 @@ const CALC_TOOL_REGISTRY = {
 };
 
 function getCurrentModeForIframes() {
-  return localStorage.getItem('aw139-mode') || 'night';
+  return document.documentElement.getAttribute('data-mode') || 'night';
 }
 
 function broadcastModeToCalcFrames(mode) {
@@ -3988,8 +3988,7 @@ function initViewportStability() {
 
 // Restaurar modo guardado al cargar
 (function initMode() {
-  const saved = localStorage.getItem('aw139-mode') || MODES.NIGHT;
-  applyMode(saved);
+  applyMode(MODES.NIGHT);
 })();
 
 initViewportStability();

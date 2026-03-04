@@ -1,5 +1,10 @@
 ﻿{
     "versions": {
+        "1.1.19": [
+            "Se elimina residual de gaps claros en modo NOCHE reforzando fondo oscuro continuo y quitando overlays de brillo en filas y contenedores.",
+            "Modo NOCHE queda como arranque por defecto al abrir la app para mantener consistencia operacional.",
+            "Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos."
+        ],
         "1.1.18": [
             "Se fija la barra lateral en DIA y NOCHE con ancho operacional para iPad, distribucion vertical completa y sin desplazamiento lateral.",
             "Se corrige la inestabilidad de zoom/posicion al reingresar a la app con bloqueo de viewport y normalizacion al volver desde segundo plano.",
