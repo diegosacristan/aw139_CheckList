@@ -1461,7 +1461,7 @@
     position: absolute;
     right: 0;
     top: calc(100% + 10px);
-    width: min(290px, calc(100vw - 24px));
+    width: min(300px, calc(100vw - 24px));
     padding: 10px 10px 12px;
     background: var(--header-bg);
     border: 1px solid var(--border);
@@ -1472,6 +1472,14 @@
     display: none;
   }
   .ui-fab-wrap.open .ui-fab-panel { display: block; }
+  .ui-fab-wrap.panel-left .ui-fab-panel {
+    left: 0;
+    right: auto;
+  }
+  .ui-fab-wrap.panel-up .ui-fab-panel {
+    top: auto;
+    bottom: calc(100% + 10px);
+  }
   .ui-fab-wrap.open .ui-fab-btn {
     border-color: var(--gold);
     background: var(--row-hover);
@@ -2182,8 +2190,9 @@
 </div><!-- /panel-pac -->
 
     <!-- ------------------ SAFETY BRIEFINGS ------------------ -->
-    <div class="section-panel" id="panel-safety">
-      <div class="reset-bar">
+    <div class="section-panel safety-hub-active" id="panel-safety">
+      <div class="reset-bar safety-reset-bar">
+        <button type="button" class="safety-back-btn safety-back-inline" id="safety-back-inline" onclick="openSafetyBriefMenu()">← MENU DE BRIEFINGS</button>
         <button class="check-all-btn" onclick="checkAll('safety')">CHECK ALL</button>
         <button class="reset-btn" onclick="resetSection('safety')">RESET</button>
       </div>
@@ -2247,9 +2256,6 @@
       </div>
 
       <div class="safety-brief-pane" id="safety-brief-mission" data-brief="mission">
-      <div class="safety-brief-topbar">
-        <button type="button" class="safety-back-btn" onclick="openSafetyBriefMenu()">← MENU DE BRIEFINGS</button>
-      </div>
       <div class="cl-section" data-section="safety" style="margin-top:0;">
         <div class="cl-section-header">BRIEFING DE LA MISION <span class="sub-note">Items minimos previos a la salida</span></div>
         <table class="cl-table">
@@ -2270,9 +2276,6 @@
 
       </div>
       <div class="safety-brief-pane" id="safety-brief-crew" data-brief="crew">
-      <div class="safety-brief-topbar">
-        <button type="button" class="safety-back-btn" onclick="openSafetyBriefMenu()">← MENU DE BRIEFINGS</button>
-      </div>
       <div class="cl-section" data-section="safety">
         <div class="cl-section-header">BRIEFING DE LA TRIPULACION <span class="sub-note">MANTA + TEM + AIRMANSHIP</span></div>
         <table class="cl-table">
@@ -2315,9 +2318,6 @@
 
       </div>
       <div class="safety-brief-pane" id="safety-brief-pax" data-brief="pax">
-      <div class="safety-brief-topbar">
-        <button type="button" class="safety-back-btn" onclick="openSafetyBriefMenu()">← MENU DE BRIEFINGS</button>
-      </div>
       <div class="cl-section" data-section="safety">
         <div class="cl-section-header">ORIENTACION A PASAJEROS <span class="sub-note">Full briefing y emergencia</span></div>
         <table class="cl-table">
@@ -2334,10 +2334,7 @@
 
       </div>
       <div class="safety-brief-pane" id="safety-brief-debrief" data-brief="debrief">
-      <div class="safety-brief-topbar">
-        <button type="button" class="safety-back-btn" onclick="openSafetyBriefMenu()">← MENU DE BRIEFINGS</button>
-      </div>
-      <div class="cl-section" data-section="safety">
+        <div class="cl-section" data-section="safety">
         <div class="cl-section-header">DEBRIEFING <span class="sub-note">Cierre post-fase o post-vuelo</span></div>
         <table class="cl-table">
           <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Seguridad/UAS: se deterioraron margenes de seguridad?</td><td class="item-action">ANALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
@@ -2351,9 +2348,6 @@
 
       </div>
       <div class="safety-brief-pane" id="safety-brief-tem" data-brief="tem">
-        <div class="safety-brief-topbar">
-          <button type="button" class="safety-back-btn" onclick="openSafetyBriefMenu()">← MENU DE BRIEFINGS</button>
-        </div>
         <div class="cl-section" data-section="safety">
           <div class="cl-section-header">TEM &amp; AIRMANSHIP <span class="sub-note">Referencias visuales mandatorias</span></div>
           <div class="safety-refs">
@@ -2863,6 +2857,7 @@ function getActionScope(id) {
 function openSafetyBriefMenu() {
   const panel = document.getElementById('panel-safety');
   if (!panel) return;
+  panel.classList.add('safety-hub-active');
   const hub = panel.querySelector('#safety-brief-hub');
   if (hub) hub.classList.add('active');
   panel.querySelectorAll('.safety-brief-btn').forEach((btn) => btn.classList.remove('active'));
@@ -2874,6 +2869,7 @@ function openSafetyBriefMenu() {
 function setSafetyBriefing(briefId) {
   const panel = document.getElementById('panel-safety');
   if (!panel) return;
+  panel.classList.remove('safety-hub-active');
   const hub = panel.querySelector('#safety-brief-hub');
   if (hub) hub.classList.remove('active');
   panel.querySelectorAll('.safety-brief-btn').forEach((btn) => {
@@ -3601,6 +3597,7 @@ function applyMode(mode) {
   const icon  = document.getElementById('mode-icon');
   const label = document.getElementById('mode-label');
   const nvgBtn = document.getElementById('nvg-toggle');
+  root.classList.add('mode-shifting');
 
   // Limpiar atributos anteriores
   root.removeAttribute('data-mode');
@@ -3623,6 +3620,10 @@ function applyMode(mode) {
 
   localStorage.setItem('aw139-mode', mode);
   broadcastModeToCalcFrames(mode);
+  clearTimeout(applyMode._t);
+  applyMode._t = setTimeout(() => {
+    root.classList.remove('mode-shifting');
+  }, 240);
 }
 
 function toggleMode() {
@@ -3722,7 +3723,7 @@ function initUIFloatingMenu() {
   const button = document.getElementById('ui-fab-btn');
   const panel = document.getElementById('ui-fab-panel');
   if (!wrap || !button || !panel) return;
-  const FAB_POS_KEY = 'aw139-ui-fab-pos-v2';
+  const FAB_POS_KEY = 'aw139-ui-fab-pos-v3';
   const EDGE_PADDING = 8;
   let suppressClick = false;
 
@@ -3737,11 +3738,15 @@ function initUIFloatingMenu() {
   };
 
   const clampPos = (x, y) => {
+    const safeTop = (parseFloat(getComputedStyle(document.body).paddingTop) || 0) + EDGE_PADDING;
+    const safeBottom = (window.CSS && CSS.supports && CSS.supports('padding-bottom: env(safe-area-inset-bottom)'))
+      ? EDGE_PADDING + 8
+      : EDGE_PADDING;
     const maxX = Math.max(EDGE_PADDING, window.innerWidth - wrap.offsetWidth - EDGE_PADDING);
-    const maxY = Math.max(EDGE_PADDING, window.innerHeight - wrap.offsetHeight - EDGE_PADDING);
+    const maxY = Math.max(safeTop, window.innerHeight - wrap.offsetHeight - safeBottom);
     return {
       x: Math.min(maxX, Math.max(EDGE_PADDING, Math.round(x))),
-      y: Math.min(maxY, Math.max(EDGE_PADDING, Math.round(y)))
+      y: Math.min(maxY, Math.max(safeTop, Math.round(y)))
     };
   };
 
@@ -3778,15 +3783,13 @@ function initUIFloatingMenu() {
       applyPos(saved.x, saved.y);
       return;
     }
-    const metaEl = document.querySelector('#topbar .meta');
     const topbarEl = document.getElementById('topbar');
     let defaultX = window.innerWidth - wrap.offsetWidth - 16;
-    let defaultY = (parseFloat(getComputedStyle(document.body).paddingTop) || 0) + 10;
-    if (metaEl && topbarEl) {
-      const metaRect = metaEl.getBoundingClientRect();
+    let defaultY = (parseFloat(getComputedStyle(document.body).paddingTop) || 0) + 12;
+    if (topbarEl) {
       const topbarRect = topbarEl.getBoundingClientRect();
-      defaultX = metaRect.left - wrap.offsetWidth - 10;
-      defaultY = topbarRect.top + Math.max(4, (topbarRect.height - wrap.offsetHeight) / 2);
+      defaultX = topbarRect.right - wrap.offsetWidth - 14;
+      defaultY = topbarRect.bottom + 10;
     }
     const pos = applyPos(defaultX, defaultY);
     savePos(pos.x, pos.y);
@@ -3805,6 +3808,20 @@ function initUIFloatingMenu() {
   const fitPanelInViewport = () => {
     panel.style.setProperty('--ui-fab-panel-shift-x', '0px');
     panel.style.setProperty('--ui-fab-panel-shift-y', '0px');
+    wrap.classList.remove('panel-up', 'panel-left');
+    const wrapRect = wrap.getBoundingClientRect();
+    const panelWidth = panel.offsetWidth || 290;
+    const panelHeight = panel.offsetHeight || 230;
+    const spaceRight = window.innerWidth - wrapRect.right;
+    const spaceLeft = wrapRect.left;
+    const spaceBelow = window.innerHeight - wrapRect.bottom;
+    const spaceAbove = wrapRect.top;
+    if (spaceRight < panelWidth - 24 && spaceLeft > spaceRight) {
+      wrap.classList.add('panel-left');
+    }
+    if (spaceBelow < panelHeight + 12 && spaceAbove > spaceBelow) {
+      wrap.classList.add('panel-up');
+    }
     const pad = 8;
     const rect = panel.getBoundingClientRect();
     let shiftX = 0;

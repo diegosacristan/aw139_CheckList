@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.14
+- Se ajusta el color operacional en modo DIA para mejorar legibilidad de textos ambar en alta iluminacion y vibracion.
+- Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos.
+
+## 1.1.13
+- Ajustes de calidad iPad: escalado lateral y contraste de modos DIA/NOCHE/NVG.
+- Safety Briefings: se ocultan CHECK ALL y RESET en hub y el boton de regreso se integra en la barra de acciones.
+- Se corrigen modal de Novedades, highlight tactil continuo y transiciones visuales para eliminar artefactos.
+- T/O & LANDING PROFILES recibe adaptacion visual premium consistente con el nuevo estilo.
+- Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos.
+
 ## 1.1.12
 - Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos.
 
