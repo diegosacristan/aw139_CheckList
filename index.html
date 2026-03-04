@@ -1257,7 +1257,7 @@
     height: 52px;
     border-radius: 50%;
     border: 1px solid var(--border);
-    background: var(--header-bg);
+    background: rgba(14, 22, 36, 0.72);
     color: var(--gold);
     box-shadow: 0 10px 24px rgba(0,0,0,0.35);
     display: grid;
@@ -1266,6 +1266,7 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    backdrop-filter: blur(4px);
     transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   }
   .ui-fab-btn:hover {
@@ -1282,12 +1283,15 @@
   .ui-fab-btn svg {
     width: 22px;
     height: 22px;
+    transform-origin: 50% 50%;
+    transition: transform 0.45s ease;
   }
   .ui-fab-panel {
     --ui-fab-panel-shift-x: 0px;
+    --ui-fab-panel-shift-y: 0px;
     position: absolute;
     right: 0;
-    bottom: calc(100% + 10px);
+    top: calc(100% + 10px);
     width: min(290px, calc(100vw - 24px));
     padding: 10px 10px 12px;
     background: var(--header-bg);
@@ -1295,7 +1299,7 @@
     border-left: 3px solid var(--gold);
     border-radius: 10px;
     box-shadow: 0 14px 32px rgba(0,0,0,0.45);
-    transform: translateX(var(--ui-fab-panel-shift-x));
+    transform: translate(var(--ui-fab-panel-shift-x), var(--ui-fab-panel-shift-y));
     display: none;
   }
   .ui-fab-wrap.open .ui-fab-panel { display: block; }
@@ -1303,6 +1307,7 @@
     border-color: var(--gold);
     background: var(--row-hover);
   }
+  .ui-fab-wrap.open .ui-fab-btn svg { transform: rotate(160deg); }
   .ui-fab-title {
     font-family: 'Share Tech Mono', monospace;
     font-size: 10px;
@@ -1350,9 +1355,13 @@
   :root[data-mode="nvg"] .ui-fab-btn {
     color: #00AA44;
     border-color: #005522;
+    background: rgba(0, 22, 0, 0.7);
   }
   :root[data-mode="nvg"] .ui-fab-panel {
     border-left-color: #00AA44;
+  }
+  :root[data-mode="day"] .ui-fab-btn {
+    background: rgba(222, 230, 245, 0.72);
   }
 
   /* Transición suave al cambiar modo */
@@ -1453,8 +1462,7 @@
     #sidebar { width: 80px; min-width: 80px; }
     .nav-btn { font-size: 10px; }
     .two-col { grid-template-columns: 1fr; }
-    .ui-fab-wrap { right: 10px; bottom: calc(env(safe-area-inset-bottom) + 10px); }
-    .ui-fab-wrap { width: 46px; height: 46px; }
+    .ui-fab-wrap { right: 10px; bottom: calc(env(safe-area-inset-bottom) + 10px); width: 46px; height: 46px; }
     .ui-fab-btn { width: 46px; height: 46px; }
   }
 </style>
@@ -3349,7 +3357,7 @@ function initUIFloatingMenu() {
   const button = document.getElementById('ui-fab-btn');
   const panel = document.getElementById('ui-fab-panel');
   if (!wrap || !button || !panel) return;
-  const FAB_POS_KEY = 'aw139-ui-fab-pos-v1';
+  const FAB_POS_KEY = 'aw139-ui-fab-pos-v2';
   const EDGE_PADDING = 8;
   let suppressClick = false;
 
@@ -3405,8 +3413,17 @@ function initUIFloatingMenu() {
       applyPos(saved.x, saved.y);
       return;
     }
-    const rect = wrap.getBoundingClientRect();
-    const pos = applyPos(rect.left, rect.top);
+    const metaEl = document.querySelector('#topbar .meta');
+    const topbarEl = document.getElementById('topbar');
+    let defaultX = window.innerWidth - wrap.offsetWidth - 16;
+    let defaultY = (parseFloat(getComputedStyle(document.body).paddingTop) || 0) + 10;
+    if (metaEl && topbarEl) {
+      const metaRect = metaEl.getBoundingClientRect();
+      const topbarRect = topbarEl.getBoundingClientRect();
+      defaultX = metaRect.left - wrap.offsetWidth - 10;
+      defaultY = topbarRect.top + Math.max(4, (topbarRect.height - wrap.offsetHeight) / 2);
+    }
+    const pos = applyPos(defaultX, defaultY);
     savePos(pos.x, pos.y);
   };
 
@@ -3422,12 +3439,17 @@ function initUIFloatingMenu() {
 
   const fitPanelInViewport = () => {
     panel.style.setProperty('--ui-fab-panel-shift-x', '0px');
+    panel.style.setProperty('--ui-fab-panel-shift-y', '0px');
     const pad = 8;
     const rect = panel.getBoundingClientRect();
     let shiftX = 0;
+    let shiftY = 0;
     if (rect.left < pad) shiftX += (pad - rect.left);
     if (rect.right > window.innerWidth - pad) shiftX -= (rect.right - (window.innerWidth - pad));
+    if (rect.top < pad) shiftY += (pad - rect.top);
+    if (rect.bottom > window.innerHeight - pad) shiftY -= (rect.bottom - (window.innerHeight - pad));
     panel.style.setProperty('--ui-fab-panel-shift-x', `${Math.round(shiftX)}px`);
+    panel.style.setProperty('--ui-fab-panel-shift-y', `${Math.round(shiftY)}px`);
   };
 
   button.addEventListener('pointerdown', (event) => {
