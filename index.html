@@ -1244,30 +1244,71 @@
   #nvg-toggle.nvg-on .m-label { color: #00AA44; }
   :root[data-mode="nvg"] #mode-toggle .m-label { color: var(--dim); }
 
-  .ui-menu {
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+  .ui-fab-wrap {
+    position: fixed;
+    right: 16px;
+    bottom: calc(env(safe-area-inset-bottom) + 16px);
+    z-index: 9500;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .ui-fab-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
     background: var(--header-bg);
-  }
-  .ui-menu summary {
-    list-style: none;
-    cursor: pointer;
-    padding: 8px 6px;
-    text-align: center;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 1px;
-    color: var(--dim);
-    user-select: none;
-  }
-  .ui-menu summary::-webkit-details-marker { display: none; }
-  .ui-menu[open] summary {
     color: var(--gold);
-    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+    display: grid;
+    place-items: center;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+  .ui-fab-btn:hover {
+    transform: translateY(-1px);
+    border-color: var(--gold);
     background: var(--row-hover);
   }
+  .ui-fab-btn:active { transform: translateY(1px); }
+  .ui-fab-wrap.dragging .ui-fab-btn {
+    cursor: grabbing;
+    transform: none;
+    transition: none;
+  }
+  .ui-fab-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+  .ui-fab-panel {
+    width: min(290px, calc(100vw - 24px));
+    padding: 10px 10px 12px;
+    background: var(--header-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: 10px;
+    box-shadow: 0 14px 32px rgba(0,0,0,0.45);
+    display: none;
+  }
+  .ui-fab-wrap.open .ui-fab-panel { display: block; }
+  .ui-fab-wrap.open .ui-fab-btn {
+    border-color: var(--gold);
+    background: var(--row-hover);
+  }
+  .ui-fab-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
   .ui-menu-body {
-    padding: 8px 8px 10px;
+    padding: 0;
     display: grid;
     gap: 6px;
   }
@@ -1302,6 +1343,13 @@
   .ui-reset-btn:hover {
     border-color: var(--gold);
     color: var(--gold);
+  }
+  :root[data-mode="nvg"] .ui-fab-btn {
+    color: #00AA44;
+    border-color: #005522;
+  }
+  :root[data-mode="nvg"] .ui-fab-panel {
+    border-left-color: #00AA44;
   }
 
   /* Transición suave al cambiar modo */
@@ -1402,6 +1450,8 @@
     #sidebar { width: 80px; min-width: 80px; }
     .nav-btn { font-size: 10px; }
     .two-col { grid-template-columns: 1fr; }
+    .ui-fab-wrap { right: 10px; bottom: calc(env(safe-area-inset-bottom) + 10px); }
+    .ui-fab-btn { width: 46px; height: 46px; }
   }
 </style>
 <link rel="stylesheet" href="styles.css">
@@ -1469,22 +1519,6 @@
       <span class="m-label" id="nvg-label">NVG</span>
     </button>
   </div>
-  <details class="ui-menu" id="ui-menu">
-    <summary>AJUSTES UI</summary>
-    <div class="ui-menu-body">
-      <div class="ui-label-row">
-        <span>FUENTE</span>
-        <span id="ui-font-value">100%</span>
-      </div>
-      <input id="ui-font-range" class="ui-range" type="range" min="85" max="125" step="5" value="100">
-      <div class="ui-label-row">
-        <span>FRANJAS</span>
-        <span id="ui-row-value">100%</span>
-      </div>
-      <input id="ui-row-range" class="ui-range" type="range" min="85" max="135" step="5" value="100">
-      <button type="button" id="ui-reset-btn" class="ui-reset-btn">RESTABLECER</button>
-    </div>
-  </details>
 </nav>
 
 <!-- MAIN -->
@@ -2283,6 +2317,30 @@
 
   </div><!-- /content -->
 </div><!-- /main -->
+
+  <div class="ui-fab-wrap" id="ui-fab-wrap">
+    <button type="button" id="ui-fab-btn" class="ui-fab-btn" aria-label="Abrir ajustes UI" aria-expanded="false" aria-controls="ui-fab-panel" title="Ajustes UI">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.62-.22l-2.49 1c-.51-.42-1.08-.74-1.69-.98l-.38-2.65A.488.488 0 0 0 14 2h-4c-.24 0-.44.17-.47.41l-.38 2.65c-.61.24-1.18.56-1.69.98l-2.49-1a.49.49 0 0 0-.62.22l-2 3.46a.5.5 0 0 0 .12.64l2.11 1.65c-.04.32-.08.65-.08.99s.03.67.07.99l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46c.12.22.39.3.62.22l2.49-1c.51.41 1.08.74 1.69.98l.38 2.65c.03.24.23.41.47.41h4c.24 0 .44-.17.47-.41l.38-2.65c.61-.24 1.18-.57 1.69-.98l2.49 1c.23.08.5 0 .62-.22l2-3.46a.5.5 0 0 0-.12-.64l-2.11-1.66zM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5z"/>
+      </svg>
+    </button>
+    <div class="ui-fab-panel" id="ui-fab-panel" role="dialog" aria-label="Ajustes UI">
+      <div class="ui-fab-title">AJUSTES UI</div>
+      <div class="ui-menu-body">
+        <div class="ui-label-row">
+          <span>FUENTE</span>
+          <span id="ui-font-value">100%</span>
+        </div>
+        <input id="ui-font-range" class="ui-range" type="range" min="85" max="125" step="5" value="100">
+        <div class="ui-label-row">
+          <span>FRANJAS</span>
+          <span id="ui-row-value">100%</span>
+        </div>
+        <input id="ui-row-range" class="ui-range" type="range" min="85" max="135" step="5" value="100">
+        <button type="button" id="ui-reset-btn" class="ui-reset-btn">RESTABLECER</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Update banner -->
   <div id="update-banner" class="update-banner" role="status" aria-live="polite">
@@ -3282,6 +3340,159 @@ function initUIPrefs() {
   });
 }
 
+function initUIFloatingMenu() {
+  const wrap = document.getElementById('ui-fab-wrap');
+  const button = document.getElementById('ui-fab-btn');
+  const panel = document.getElementById('ui-fab-panel');
+  if (!wrap || !button || !panel) return;
+  const FAB_POS_KEY = 'aw139-ui-fab-pos-v1';
+  const EDGE_PADDING = 8;
+  let suppressClick = false;
+
+  let drag = {
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    baseX: 0,
+    baseY: 0,
+    moved: false
+  };
+
+  const clampPos = (x, y) => {
+    const maxX = Math.max(EDGE_PADDING, window.innerWidth - wrap.offsetWidth - EDGE_PADDING);
+    const maxY = Math.max(EDGE_PADDING, window.innerHeight - wrap.offsetHeight - EDGE_PADDING);
+    return {
+      x: Math.min(maxX, Math.max(EDGE_PADDING, Math.round(x))),
+      y: Math.min(maxY, Math.max(EDGE_PADDING, Math.round(y)))
+    };
+  };
+
+  const applyPos = (x, y) => {
+    const pos = clampPos(x, y);
+    wrap.style.left = `${pos.x}px`;
+    wrap.style.top = `${pos.y}px`;
+    wrap.style.right = 'auto';
+    wrap.style.bottom = 'auto';
+    return pos;
+  };
+
+  const savePos = (x, y) => {
+    try {
+      localStorage.setItem(FAB_POS_KEY, JSON.stringify({ x, y }));
+    } catch (_) {}
+  };
+
+  const readPos = () => {
+    try {
+      const raw = localStorage.getItem(FAB_POS_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.x !== 'number' || typeof parsed.y !== 'number') return null;
+      return parsed;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const applyInitialPos = () => {
+    const saved = readPos();
+    if (saved) {
+      applyPos(saved.x, saved.y);
+      return;
+    }
+    const rect = wrap.getBoundingClientRect();
+    const pos = applyPos(rect.left, rect.top);
+    savePos(pos.x, pos.y);
+  };
+
+  const setOpen = (open) => {
+    wrap.classList.toggle('open', open);
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+
+  button.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    const rect = wrap.getBoundingClientRect();
+    drag = {
+      active: true,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      baseX: rect.left,
+      baseY: rect.top,
+      moved: false
+    };
+    wrap.classList.add('dragging');
+    if (button.setPointerCapture) button.setPointerCapture(event.pointerId);
+  });
+
+  button.addEventListener('pointermove', (event) => {
+    if (!drag.active || event.pointerId !== drag.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) drag.moved = true;
+    applyPos(drag.baseX + dx, drag.baseY + dy);
+    event.preventDefault();
+  });
+
+  const endDrag = (event) => {
+    if (!drag.active || event.pointerId !== drag.pointerId) return;
+    if (button.hasPointerCapture && button.hasPointerCapture(event.pointerId)) {
+      button.releasePointerCapture(event.pointerId);
+    }
+    wrap.classList.remove('dragging');
+    if (drag.moved) {
+      suppressClick = true;
+      const rect = wrap.getBoundingClientRect();
+      savePos(rect.left, rect.top);
+    }
+    drag = {
+      active: false,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      baseX: 0,
+      baseY: 0,
+      moved: false
+    };
+  };
+
+  button.addEventListener('pointerup', endDrag);
+  button.addEventListener('pointercancel', endDrag);
+
+  button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (suppressClick) {
+      suppressClick = false;
+      event.preventDefault();
+      return;
+    }
+    const next = !wrap.classList.contains('open');
+    setOpen(next);
+  });
+
+  panel.addEventListener('click', (event) => {
+    event.stopPropagation();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!wrap.contains(event.target)) setOpen(false);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setOpen(false);
+  });
+
+  window.addEventListener('resize', () => {
+    const rect = wrap.getBoundingClientRect();
+    const pos = applyPos(rect.left, rect.top);
+    savePos(pos.x, pos.y);
+  });
+
+  applyInitialPos();
+}
+
 // Restaurar modo guardado al cargar
 (function initMode() {
   const saved = localStorage.getItem('aw139-mode') || MODES.NIGHT;
@@ -3289,6 +3500,7 @@ function initUIPrefs() {
 })();
 
 initUIPrefs();
+initUIFloatingMenu();
 
 // Init progress
 Object.keys(labels).forEach(id => updateProgress(id));
