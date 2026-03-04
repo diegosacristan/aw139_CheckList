@@ -1249,10 +1249,8 @@
     right: 16px;
     bottom: calc(env(safe-area-inset-bottom) + 16px);
     z-index: 9500;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 10px;
+    width: 52px;
+    height: 52px;
   }
   .ui-fab-btn {
     width: 52px;
@@ -1286,6 +1284,10 @@
     height: 22px;
   }
   .ui-fab-panel {
+    --ui-fab-panel-shift-x: 0px;
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 10px);
     width: min(290px, calc(100vw - 24px));
     padding: 10px 10px 12px;
     background: var(--header-bg);
@@ -1293,6 +1295,7 @@
     border-left: 3px solid var(--gold);
     border-radius: 10px;
     box-shadow: 0 14px 32px rgba(0,0,0,0.45);
+    transform: translateX(var(--ui-fab-panel-shift-x));
     display: none;
   }
   .ui-fab-wrap.open .ui-fab-panel { display: block; }
@@ -1451,6 +1454,7 @@
     .nav-btn { font-size: 10px; }
     .two-col { grid-template-columns: 1fr; }
     .ui-fab-wrap { right: 10px; bottom: calc(env(safe-area-inset-bottom) + 10px); }
+    .ui-fab-wrap { width: 46px; height: 46px; }
     .ui-fab-btn { width: 46px; height: 46px; }
   }
 </style>
@@ -3409,6 +3413,21 @@ function initUIFloatingMenu() {
   const setOpen = (open) => {
     wrap.classList.toggle('open', open);
     button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      requestAnimationFrame(() => {
+        fitPanelInViewport();
+      });
+    }
+  };
+
+  const fitPanelInViewport = () => {
+    panel.style.setProperty('--ui-fab-panel-shift-x', '0px');
+    const pad = 8;
+    const rect = panel.getBoundingClientRect();
+    let shiftX = 0;
+    if (rect.left < pad) shiftX += (pad - rect.left);
+    if (rect.right > window.innerWidth - pad) shiftX -= (rect.right - (window.innerWidth - pad));
+    panel.style.setProperty('--ui-fab-panel-shift-x', `${Math.round(shiftX)}px`);
   };
 
   button.addEventListener('pointerdown', (event) => {
@@ -3433,6 +3452,7 @@ function initUIFloatingMenu() {
     const dy = event.clientY - drag.startY;
     if (Math.abs(dx) > 4 || Math.abs(dy) > 4) drag.moved = true;
     applyPos(drag.baseX + dx, drag.baseY + dy);
+    if (wrap.classList.contains('open')) fitPanelInViewport();
     event.preventDefault();
   });
 
@@ -3488,6 +3508,7 @@ function initUIFloatingMenu() {
     const rect = wrap.getBoundingClientRect();
     const pos = applyPos(rect.left, rect.top);
     savePos(pos.x, pos.y);
+    if (wrap.classList.contains('open')) fitPanelInViewport();
   });
 
   applyInitialPos();
