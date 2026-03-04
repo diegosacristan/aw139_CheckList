@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.16
+- Resumen 1.1.13 a 1.1.16: mejora integral de interfaz para iPad con rediseño premium, ajustes de contraste y estabilidad visual por modo.
+- Safety Briefings: hub optimizado con iconografía, ocultamiento de CHECK ALL y RESET en menú, y botón de regreso integrado en barra de acciones.
+- T/O & LDG Profiles y paneles principales actualizados a la nueva estética manteniendo la lógica funcional existente.
+- Contraste operacional reforzado: ajuste de tonos en modo DÍA y restablecimiento de modo NOCHE con paleta oscura operacional.
+- Modo NVG endurecido: eliminación de glare, reflejos, highlights, pulsos y animaciones para mantener luminicencia estable NVG friendly.
+- Se incrementa APP_VERSION para forzar renovación de Service Worker y caché en todos los dispositivos.
+
+## 1.1.15
+- Se restablece modo NOCHE con paleta oscura operacional y se corrigen artefactos blancos de la estetica reciente.
+- Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos.
+
 ## 1.1.14
 - Se ajusta el color operacional en modo DIA para mejorar legibilidad de textos ambar en alta iluminacion y vibracion.
 - Se incrementa APP_VERSION para forzar renovacion de Service Worker y cache en todos los dispositivos.

@@ -1180,6 +1180,63 @@ html[data-mode="nvg"] .safety-back-btn {
   color: #7dff45 !important;
 }
 
+/* NVG anti-glare lock: no highlights, no glints, no pulses */
+html[data-mode="nvg"] body::before,
+html[data-mode="nvg"] body::after,
+html[data-mode="nvg"] #main::before,
+html[data-mode="nvg"] #topbar::before,
+html[data-mode="nvg"] .op-indicator::before,
+html[data-mode="nvg"] .cl-table tr[onclick] td::after,
+html[data-mode="nvg"] .cl-table tr[onclick]::after,
+html[data-mode="nvg"] .progress-fill::after,
+html[data-mode="nvg"] .op-progress-fill::after {
+  display: none !important;
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+html[data-mode="nvg"] .nvg-badge,
+html[data-mode="nvg"] .banner.red,
+html[data-mode="nvg"] .banner.amber,
+html[data-mode="nvg"] .row-repeat,
+html[data-mode="nvg"] .first-flight-badge,
+html[data-mode="nvg"] .progress-fill.progress-pulse::after,
+html[data-mode="nvg"] .op-progress-fill.progress-pulse::after {
+  animation: none !important;
+}
+
+html[data-mode="nvg"] .cl-table tr.check-impulse .check-box,
+html[data-mode="nvg"] .cl-table tr.check-impulse .check-toggle {
+  transform: none !important;
+  transition: none !important;
+}
+
+html[data-mode="nvg"] #topbar,
+html[data-mode="nvg"] .op-indicator,
+html[data-mode="nvg"] .cl-section,
+html[data-mode="nvg"] .progress-bar-wrap,
+html[data-mode="nvg"] .reset-bar,
+html[data-mode="nvg"] .ui-fab-btn,
+html[data-mode="nvg"] .ui-fab-panel,
+html[data-mode="nvg"] .safety-brief-menu,
+html[data-mode="nvg"] .safety-brief-btn,
+html[data-mode="nvg"] #panel-profiles .prof-tabs,
+html[data-mode="nvg"] #panel-profiles .prof-pane,
+html[data-mode="nvg"] #panel-profiles .phase-block,
+html[data-mode="nvg"] #panel-profiles .phase-header,
+html[data-mode="nvg"] #panel-profiles .phase-body {
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+html[data-mode="nvg"] .cl-table tr[onclick] td {
+  background: #001108 !important;
+}
+
+html[data-mode="nvg"] .cl-table tr.checked td {
+  background: #002012 !important;
+}
+
 /* UX hotfix pack - iPad / contrast / briefing hub / NVG continuity */
 
 html.mode-shifting *,
@@ -1493,6 +1550,81 @@ html[data-mode="nvg"] .row-note td {
 
 html[data-mode="nvg"] .cl-table tr {
   border-bottom-color: rgba(0, 112, 41, 0.34) !important;
+}
+
+/* Explicit NIGHT mode restore (operational dark baseline) */
+html[data-mode="night"] {
+  --text: #eaf2ff;
+  --dim: #8fa3c7;
+  --title: #eef4ff;
+  --gold: #d9b46a;
+  --border: rgba(137, 157, 192, 0.24);
+}
+
+html[data-mode="night"] body {
+  background:
+    radial-gradient(1150px 560px at 92% -10%, rgba(110, 162, 246, 0.18), transparent 70%),
+    radial-gradient(980px 540px at -8% 108%, rgba(214, 172, 86, 0.12), transparent 72%),
+    linear-gradient(160deg, #070f1e, #0c162b 55%, #0d1830);
+  color: #eaf2ff;
+}
+
+html[data-mode="night"] #sidebar {
+  background: rgba(11, 19, 35, 0.84);
+  border-color: rgba(137, 157, 192, 0.28);
+  box-shadow: 0 24px 46px rgba(4, 9, 20, 0.46);
+}
+
+html[data-mode="night"] #topbar {
+  background: rgba(11, 19, 35, 0.88);
+  border-color: rgba(137, 157, 192, 0.28);
+}
+
+html[data-mode="night"] .op-indicator {
+  background: rgba(9, 16, 30, 0.9);
+  border-color: rgba(137, 157, 192, 0.28);
+}
+
+html[data-mode="night"] .cl-table tr[onclick] td {
+  background: linear-gradient(180deg, rgba(23, 36, 59, 0.94), rgba(18, 30, 50, 0.92));
+  border-top-color: rgba(132, 152, 190, 0.26);
+  border-bottom-color: rgba(132, 152, 190, 0.26);
+}
+
+html[data-mode="night"] .cl-section-header {
+  background: rgba(14, 24, 42, 0.9);
+  border-color: rgba(132, 152, 190, 0.28);
+  color: #eef4ff;
+}
+
+html[data-mode="night"] .progress-bar-wrap {
+  background: rgba(12, 21, 38, 0.84);
+  border-color: rgba(132, 152, 190, 0.24);
+}
+
+html[data-mode="night"] .ui-fab-btn {
+  color: #d9b46a;
+  background: rgba(14, 26, 45, 0.58) !important;
+  border-color: rgba(145, 164, 198, 0.56) !important;
+}
+
+html[data-mode="night"] .ui-fab-panel {
+  background: linear-gradient(180deg, rgba(13, 24, 43, 0.8), rgba(10, 18, 33, 0.72)) !important;
+  border-color: rgba(145, 165, 199, 0.42) !important;
+}
+
+html[data-mode="night"] .mode-btn {
+  background: rgba(12, 22, 40, 0.74);
+  border-bottom-color: rgba(122, 143, 180, 0.22);
+}
+
+html[data-mode="night"] .mode-btn .m-svg,
+html[data-mode="night"] .mode-btn .m-label {
+  color: rgba(219, 231, 251, 0.9);
+}
+
+html[data-mode="night"] #content {
+  background: transparent;
 }
 
 /* Day mode operational amber contrast (sunlight + vibration readability) */
