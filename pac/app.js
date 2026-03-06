@@ -384,49 +384,60 @@
     return true;
   }
 
-  // Corrige calibraciones históricas del eje ITT:
-  // - 400..900 -> 450..850
-  // - 500..800 anclado a bordes de panel -> 450..850 (recupera fix previo agresivo)
+  function isRangeApprox(min, max, targetMin, targetMax, tol = 0.35) {
+    return Math.abs(min - targetMin) <= tol && Math.abs(max - targetMax) <= tol;
+  }
+
+  function setAxisRange(axis, min, max) {
+    const ascending = axis.v2 >= axis.v1;
+    axis.v1 = ascending ? min : max;
+    axis.v2 = ascending ? max : min;
+  }
+
+  // Corrige calibraciones legacy detectadas en dispositivos con cache antiguo.
   function maybeAutoFixIttAxisRange() {
-    /* 
-    // Comentado para corregir desplazamiento a la derecha en ITT 700.
-    // La Figura 4-5 real tiene un rango de 400-900, no 450-850.
     const itt = config?.axes?.itt_x;
     if (!itt || !Number.isFinite(itt.v1) || !Number.isFinite(itt.v2)) return false;
 
     const min = Math.min(itt.v1, itt.v2);
     const max = Math.max(itt.v1, itt.v2);
     let previousRange = null;
-    if (Math.abs(min - 400) < 1e-6 && Math.abs(max - 900) < 1e-6) {
-      previousRange = '400-900';
-    } else if (Math.abs(min - 500) < 1e-6 && Math.abs(max - 800) < 1e-6) {
-      const bbox = config?.panels?.itt?.bbox;
-      if (bbox && itt.p1 && itt.p2) {
-        const left = Math.min(bbox[0], bbox[2]);
-        const right = Math.max(bbox[0], bbox[2]);
-        const panelWidth = Math.max(1, right - left);
-        const axisMinX = Math.min(itt.p1[0], itt.p2[0]);
-        const axisMaxX = Math.max(itt.p1[0], itt.p2[0]);
-        const nearLeft = Math.abs(axisMinX - left) <= panelWidth * 0.08;
-        const nearRight = Math.abs(axisMaxX - right) <= panelWidth * 0.08;
-        if (nearLeft && nearRight) previousRange = '500-800-edge';
-      }
-    }
+
+    if (isRangeApprox(min, max, 450, 850)) previousRange = '450-850';
+    else if (isRangeApprox(min, max, 500, 800)) previousRange = '500-800';
+
     if (!previousRange) return false;
 
-    const ascending = itt.v2 >= itt.v1;
-    itt.v1 = ascending ? 450 : 850;
-    itt.v2 = ascending ? 850 : 450;
+    // Figura 4-5 usa ITT 400..900.
+    setAxisRange(itt, 400, 900);
     config.meta = {
       ...(config.meta || {}),
       ittAxisAutoFixed: new Date().toISOString(),
       ittAxisPreviousRange: previousRange,
-      ittAxisCurrentRange: '450-850',
+      ittAxisCurrentRange: '400-900',
     };
     saveConfig();
     return true;
-    */
-    return false;
+  }
+
+  // Corrige NG legacy 80..102.4 a escala de carta 80..105.
+  function maybeAutoFixNgAxisRange() {
+    const ng = config?.axes?.ng_x;
+    if (!ng || !Number.isFinite(ng.v1) || !Number.isFinite(ng.v2)) return false;
+
+    const min = Math.min(ng.v1, ng.v2);
+    const max = Math.max(ng.v1, ng.v2);
+    if (!isRangeApprox(min, max, 80, 102.4)) return false;
+
+    setAxisRange(ng, 80, 105);
+    config.meta = {
+      ...(config.meta || {}),
+      ngAxisAutoFixed: new Date().toISOString(),
+      ngAxisPreviousRange: '80-102.4',
+      ngAxisCurrentRange: '80-105',
+    };
+    saveConfig();
+    return true;
   }
 
   // Ejecuta autocorrecciones de calibración sin requerir recarga de la vista.
@@ -440,7 +451,11 @@
     let lastMessage = '';
     if (maybeAutoFixIttAxisRange()) {
       changed = true;
-      lastMessage = 'Calibracion ITT corregida automaticamente (eje 450-850°C).';
+      lastMessage = 'Calibracion ITT corregida automaticamente (eje 400-900°C).';
+    }
+    if (maybeAutoFixNgAxisRange()) {
+      changed = true;
+      lastMessage = 'Calibracion NG corregida automaticamente (eje 80-105%).';
     }
     if (opts.allowScale && maybeAutoScaleLegacyConfigToImage()) {
       changed = true;
@@ -687,6 +702,18 @@
   }
   function toImage(pt) {
     return { x: (pt.x - view.tx) / view.scale, y: (pt.y - view.ty) / view.scale };
+  }
+
+  function fitViewToImage() {
+    if (!img?.complete || imageLoadError) return false;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height || !img.width || !img.height) return false;
+    const sx = rect.width / img.width;
+    const sy = rect.height / img.height;
+    view.scale = Math.min(sx, sy);
+    view.tx = (rect.width - img.width * view.scale) / 2;
+    view.ty = (rect.height - img.height * view.scale) / 2;
+    return true;
   }
 
   function resize() {
@@ -2061,7 +2088,14 @@
 
   // ---------- input events ----------
   els.btnCompute.addEventListener('click', computeAndOverlay);
-  els.btnResetView.addEventListener('click', () => { view = { scale: 1, tx: 0, ty: 0 }; draw(); });
+  els.btnResetView.addEventListener('click', () => {
+    if (fitViewToImage()) {
+      draw();
+      return;
+    }
+    view = { scale: 1, tx: 0, ty: 0 };
+    draw();
+  });
   if (els.btnSaveReading) els.btnSaveReading.addEventListener('click', saveCurrentReading);
   if (els.btnLoadReading) els.btnLoadReading.addEventListener('click', loadSelectedReading);
   if (els.btnDeleteReading) els.btnDeleteReading.addEventListener('click', deleteSelectedReading);
@@ -2386,6 +2420,7 @@
     const loadedBundled = loadedUrl ? false : loadBundledConfigIfNeeded();
     const rebasedForChartNow = maybeRebaseConfigForChartSource();
     const autoFixedIttNow = maybeAutoFixIttAxisRange();
+    const autoFixedNgNow = maybeAutoFixNgAxisRange();
     const autoScaledNow = img.complete ? maybeAutoScaleLegacyConfigToImage() : false;
     if (loadedUrl || loadedBundled) {
       hudText.textContent = 'Configuracion calibrada cargada automaticamente.';
@@ -2398,7 +2433,12 @@
       draw();
     }
     if (autoFixedIttNow) {
-      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 450-850°C).';
+      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 400-900°C).';
+      refreshStatus();
+      draw();
+    }
+    if (autoFixedNgNow) {
+      hudText.textContent = 'Calibracion NG corregida automaticamente (eje 80-105%).';
       refreshStatus();
       draw();
     }
@@ -2414,14 +2454,9 @@
     const rebasedForChart = maybeRebaseConfigForChartSource();
     const resetLegacyScaled = maybeResetLegacyScaledConfigForCurrentImage();
     const autoFixedItt = maybeAutoFixIttAxisRange();
+    const autoFixedNg = maybeAutoFixNgAxisRange();
     const autoScaled = maybeAutoScaleLegacyConfigToImage();
-    // fit view to screen
-    const rect = canvas.getBoundingClientRect();
-    const sx = rect.width / img.width;
-    const sy = rect.height / img.height;
-    view.scale = Math.min(sx, sy);
-    view.tx = (rect.width - img.width * view.scale) / 2;
-    view.ty = (rect.height - img.height * view.scale) / 2;
+    fitViewToImage();
     if (resetLegacyScaled) {
       hudText.textContent = 'Calibracion restablecida para la carta PDF actual.';
       refreshStatus();
@@ -2435,7 +2470,11 @@
       refreshStatus();
     }
     if (autoFixedItt) {
-      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 450-850°C).';
+      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 400-900°C).';
+      refreshStatus();
+    }
+    if (autoFixedNg) {
+      hudText.textContent = 'Calibracion NG corregida automaticamente (eje 80-105%).';
       refreshStatus();
     }
     draw();
@@ -2446,6 +2485,54 @@
   };
 
   startChartLoad();
+
+  // Expose a lightweight API for host page to refit after view/layout transitions.
+  window.PAC_fitToScreen = () => {
+    const ok = fitViewToImage();
+    if (ok) draw();
+    return ok;
+  };
+
+  // Stable export snapshot for PDF generation (fit + crop to chart bounds + downsample).
+  window.PAC_captureForPdf = (opts = {}) => {
+    const previousView = { scale: view.scale, tx: view.tx, ty: view.ty };
+    try {
+      if (!img?.complete || imageLoadError) return null;
+      if (!fitViewToImage()) return null;
+      draw();
+
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const sx = Math.max(0, Math.floor(view.tx * dpr));
+      const sy = Math.max(0, Math.floor(view.ty * dpr));
+      const sw = Math.max(1, Math.floor(img.width * view.scale * dpr));
+      const sh = Math.max(1, Math.floor(img.height * view.scale * dpr));
+
+      if (!sw || !sh) return null;
+
+      const maxSide = Math.max(600, Number(opts.maxSide) || 2200);
+      const downsample = Math.min(1, maxSide / Math.max(sw, sh));
+      const tw = Math.max(1, Math.floor(sw * downsample));
+      const th = Math.max(1, Math.floor(sh * downsample));
+
+      const out = document.createElement('canvas');
+      out.width = tw;
+      out.height = th;
+      const outCtx = out.getContext('2d', { alpha: false });
+      if (!outCtx) return null;
+      outCtx.fillStyle = '#0b1324';
+      outCtx.fillRect(0, 0, tw, th);
+      outCtx.drawImage(canvas, sx, sy, sw, sh, 0, 0, tw, th);
+
+      const dataUrl = out.toDataURL('image/jpeg', 0.9);
+      if (!dataUrl || dataUrl.length < 200) return null;
+      return { dataUrl, width: tw, height: th };
+    } catch (err) {
+      return null;
+    } finally {
+      view = previousView;
+      draw();
+    }
+  };
 
   window.addEventListener('resize', () => {
     syncResponsiveSheet(false);

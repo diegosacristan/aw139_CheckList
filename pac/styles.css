@@ -885,11 +885,14 @@ hr {
 
   body.mobile-sheet .sheet-toggle {
     display: inline-flex;
-    bottom: calc(100vh - min(78vh, 560px) + 8px);
+    top: calc(100vh - min(78vh, 560px) + 8px);
+    top: calc(100dvh - min(78dvh, 560px) + 8px);
+    bottom: auto;
   }
 
   body.mobile-sheet.sheet-collapsed .sheet-toggle {
-    bottom: 10px;
+    top: auto;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   }
 }
 
