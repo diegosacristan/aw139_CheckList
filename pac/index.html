@@ -13,10 +13,10 @@
   <div class="input-card">
 
     <div class="input-card-header">
-      <div class="input-kicker">Flight Performance Utility</div>
+      <div class="input-kicker">Training Utility Module</div>
       <div class="pac-title">Power Assurance Check</div>
       <div class="pac-sub">AW139 | NR 100% | EAPS OFF</div>
-      <div class="pac-squadron-badge">FAC 0008 | Aguila Uno</div>
+      <div class="pac-squadron-badge"> Águila Uno</div>
     </div>
 
     <div class="input-meta-grid">
@@ -38,34 +38,34 @@
     <div class="input-row-2">
       <div class="input-group">
         <label>TQ indicado (%)</label>
-        <input id="tq" type="number" step="0.1" value="100" inputmode="decimal"/>
+        <input id="tq" type="number" step="0.1" value="90" inputmode="numeric" min="90" max="105"/>
       </div>
       <div class="input-group">
         <label>Presion Alt (ft)</label>
-        <input id="alt" type="number" step="10" value="7000" inputmode="numeric"/>
+        <input id="alt" type="number" step="10" value="5000" inputmode="numeric" min="-1000" max="14000"/>
       </div>
     </div>
 
     <div class="input-row-2">
       <div class="input-group">
         <label>ITT indicado (C)</label>
-        <input id="itt" type="number" step="1" value="700" inputmode="numeric"/>
+        <input id="itt" type="number" step="1" value="600" inputmode="numeric" min="400" max="850"/>
       </div>
       <div class="input-group">
         <label>OAT (C)</label>
-        <input id="oat" type="number" step="1" value="10" inputmode="numeric"/>
+        <input id="oat" type="number" step="1" value="20" inputmode="numeric" min="-40" max="50"/>
       </div>
     </div>
 
     <div class="input-group">
       <label>NG indicado (%)</label>
-      <input id="ng" type="number" step="0.1" value="95.0" inputmode="decimal"/>
+      <input id="ng" type="number" step="0.1" value="94.1" inputmode="decimal" min="80" max="105"/>
     </div>
 
     <button class="btn-compute-main" id="btnCompute">
       Calcular y abrir carta
     </button>
-    <small class="input-note">Ingresa datos del chequeo PAC y valida limites ITT / NG en la carta.</small>
+    <small class="input-note">Ingresa datos indicados en la aeronave y has click en CALCULAR Y ABRIR CARTA.</small>
 
   </div>
 </div>
@@ -94,7 +94,7 @@
       <div class="card">
         <h2>2) RESULTADOS</h2>
         <div id="results">
-          <small>Calcula para ver maximos y estado.</small>
+          <small>Calcula para ver máximos y estado.</small>
         </div>
       </div>
 
@@ -117,7 +117,7 @@
       </div>
 
       <div class="card">
-        <h2>ADMIN / CALIBRACION</h2>
+        <h2>ADMIN / CALIBRACIÓN</h2>
         <div class="row"><label>Clave admin</label>
           <input id="adminKey" type="password" placeholder="Opcional"/>
         </div>
@@ -158,15 +158,15 @@
               Importar JSON<input id="fileImport" type="file" accept="application/json" style="display:none"/>
             </label>
           </div>
-          <small>Recomendacion: calibra con zoom alto para precision.</small>
+          <small>Recomendación: calibra con zoom alto para precision.</small>
         </div>
       </div>
 
       <div class="card">
         <h2>NOTAS</h2>
         <small>
-          Esta herramienta replica la lectura de la carta de PAC.
-          Si el punto queda fuera del rango de la carta, la app marcara "no concluyente".
+          PAC Training TOOL.
+          Si el punto queda fuera del rango de la carta, aparecerá como "No Concluyente".
         </small>
       </div>
 
@@ -178,7 +178,7 @@
       <div id="hud">
         <div><b>Ayuda</b></div>
         <div id="hudText" class="hud-copy">
-          Carga la carta (ya incluida) y calibra para habilitar calculos.
+          Carga la carta (ya incluida) y calibra para habilitar cálculos.
         </div>
       </div>
       <button id="sidebarSheetToggle" class="sheet-toggle" type="button"
@@ -270,7 +270,7 @@
       script.onerror = () => {
         exportSpinner.style.display = 'none';
         btnExportPdf.disabled = false;
-        alert('No se pudo cargar la libreria de PDF. Verifica conexion.');
+        alert('No se pudo cargar la libreria de PDF. Verifica conexión a internet e intenta de nuevo.');
       };
       document.head.appendChild(script);
     } else {
@@ -353,10 +353,10 @@
     fn('normal', 6); sc(DGRAY);
     tx('MATRICULA / REGISTRO', colLeft + 3, y + 4);
     fn('bold', 8); sc(DARK);
-    tx('FAC 0008 - Aguila Uno', colLeft + 3, y + 9.5);
+    tx('FAC 0008 - Águila Uno', colLeft + 3, y + 9.5);
 
     fn('normal', 6); sc(DGRAY);
-    tx('TIMESTAMP', colLeft + colLeftW/2 + 2, y + 4);
+    tx('Fecha y Hora Z', colLeft + colLeftW/2 + 2, y + 4);
     fn('bold', 7.5); sc(DARK);
     tx(ts, colLeft + colLeftW/2 + 2, y + 9.5);
     y += 16;

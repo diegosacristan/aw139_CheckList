@@ -6,7 +6,7 @@
 <title>AW139 ÁGUILA 1 – Checklist</title>
 
 <!-- --- PWA MANIFEST --- -->
-<link rel="manifest" href="/aw139_CheckList/manifest.json">
+<link rel="manifest" href="manifest.json">
 
 <!-- --- PWA / iOS HOME SCREEN --- -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2172,20 +2172,9 @@
         </div>
         <div style="background:var(--pac-panel-bg); padding:12px 16px; border-bottom:1px solid var(--pac-panel-border);">
           <div style="font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--pac-label); letter-spacing:0.6px; line-height:1.6;">
-            Se integra el modulo calibrado de Power Assurance con trazado y validacion de limites.
-            Si necesitas recalibrar, usa el modo Admin dentro del modulo.
+            Módulo PAC con fines de ENTRENAMIENTO - No constituye un reemplazo del procedimiento real ni de la carta de referencia de RFM.<br>
+            Active Módulo ADMIN para recalibrar el motor de gráficas.
           </div>
-        </div>
-        <div style="background:var(--pac-panel-bg); padding:10px 16px; border-bottom:1px solid var(--pac-panel-border);">
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" style="font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:1px; padding:6px 12px; border-radius:2px; border:1px solid var(--pac-btn-secondary-border); background:var(--pac-field-bg); color:var(--pac-field-text);">
-              POWER ASSURANCE
-            </button>
-            <button type="button" onclick="window.open('pac_test/index.html?module=pac_test','_blank','noopener')" style="font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:1px; padding:6px 12px; border-radius:2px; border:1px solid var(--pac-btn-secondary-border); background:var(--pac-field-bg); color:var(--pac-field-text);">
-              PAC MODULO PRUEBA
-            </button>
-          </div>
-        </div>
         <div style="background:var(--pac-canvas-bg); padding:12px 16px;">
           <div id="calc-host-pac" data-calc-tool-host data-tool-id="pac"></div>
         </div>

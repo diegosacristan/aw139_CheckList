@@ -1,5 +1,9 @@
 ﻿{
     "versions": {
+        "1.1.20": [
+            "Se realiza auditoria técnica completa del aplicativo y módulos con validación estática y prueba funcional en navegador.",
+            "Se Reajusta Motor de graficación módulo PAC y ajustes en reporte PDF."
+       ],
         "1.1.19": [
             "Se elimina residual de gaps claros en modo NOCHE reforzando fondo oscuro continuo y quitando overlays de brillo en filas y contenedores.",
             "Modo NOCHE queda como arranque por defecto al abrir la app para mantener consistencia operacional.",
