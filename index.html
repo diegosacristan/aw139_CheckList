@@ -2114,7 +2114,7 @@
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">5</td><td class="item-name">Main Bus</td><td class="item-action">MINIMUM 23V</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">6</td><td class="item-name">ENG MODE Switch</td><td class="item-action">IDLE</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">7</td><td class="item-name">ENG MODE Switch</td><td class="item-action">FLIGHT (at 65% ± 1%)</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">8</td><td class="item-name">GEN</td><td class= "item-action">ON LINE / CHECK LOAD</td><td class="check-col"><div class= "check-box"></div></ td>
+          <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">8</td><td class="item-name">GEN</td><td class="item-action">ON LINE / CHECK LOAD</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="ff-row" onclick="toggle(this)"><td class="item-num" style="color:var(--gold)">9</td><td class="item-name">Bus Tie</td><td class="item-action">AUTO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="row-repeat" onclick="repeatReset(this, 'subsequent', 2, 9)"><td colspan="4">REPEAT ITEMS 2 TO 9 FOR 2nd ENGINE</td></tr>
           <tr class="info-block" onclick="show('syschecks')" style="cursor:pointer;"><td colspan="3" style="text-align: center;"><strong class="info-link">GO TO SYS CHECKS MENU</strong></td></tr>
@@ -2176,9 +2176,13 @@
             Active Módulo ADMIN para recalibrar el motor de gráficas.
           </div>
         <div style="background:var(--pac-canvas-bg); padding:12px 16px;">
+          <div id="pac-orientation-hint" style="display:none; margin:0 0 10px 0; padding:8px 10px; border:1px solid var(--pac-panel-border); border-radius:6px; color:var(--gold); font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:0.6px;">
+            Sugerencia PAC: para mejor lectura de la carta, use orientacion horizontal en iPad.
+          </div>
           <div id="calc-host-pac" data-calc-tool-host data-tool-id="pac"></div>
         </div>
       </div>
+    </div>
 </div><!-- /panel-pac -->
 
     <!-- ------------------ SAFETY BRIEFINGS ------------------ -->
@@ -2249,19 +2253,19 @@
 
       <div class="safety-brief-pane" id="safety-brief-mission" data-brief="mission">
       <div class="cl-section" data-section="safety" style="margin-top:0;">
-        <div class="cl-section-header">BRIEFING DE LA MISION <span class="sub-note">Items minimos previos a la salida</span></div>
+        <div class="cl-section-header">BRIEFING DE LA MISIÓN <span class="sub-note">Ítems mínimos previos a la salida</span></div>
         <table class="cl-table">
-          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Lider de mision</td><td class="item-action">NOMBRADO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Líder de misión</td><td class="item-action">NOMBRADO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Reconocimiento del campo/sitio</td><td class="item-action">REALIZADO</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Meteorologia</td><td class="item-action">CHEQUEADA</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Meteorología</td><td class="item-action">CHEQUEADA</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Alternos</td><td class="item-action">VERIFICADOS</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Vuelo en formacion</td><td class="item-action">ESTABLECER</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Vuelo en formación</td><td class="item-action">ESTABLECER</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Tarjeta de riesgo</td><td class="item-action">DILIGENCIADA</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">7</td><td class="item-name">Controlador aereo</td><td class="item-action">VERIFICADO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">7</td><td class="item-name">Controlador aéreo</td><td class="item-action">VERIFICADO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">8</td><td class="item-name">Frecuencias</td><td class="item-action">ESTABLECIDAS</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">9</td><td class="item-name">Mapa de riesgos</td><td class="item-action">VERIFICADO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">10</td><td class="item-name">Riesgo BASH</td><td class="item-action">VERIFICADO</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">11</td><td class="item-name">Equipo de mision</td><td class="item-action">REQUERIDO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">11</td><td class="item-name">Equipo de misión</td><td class="item-action">REQUERIDO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr class="row-note"><td colspan="4">VIP1: reconocimiento de sitio obligatorio (peligros, parqueo, entradas/salidas y amenazas).</td></tr>
         </table>
       </div>
@@ -2269,58 +2273,57 @@
       </div>
       <div class="safety-brief-pane" id="safety-brief-crew" data-brief="crew">
       <div class="cl-section" data-section="safety">
-        <div class="cl-section-header">BRIEFING DE LA TRIPULACION <span class="sub-note">MANTA + TEM + AIRMANSHIP</span></div>
+        <div class="cl-section-header">BRIEFING DE LA TRIPULACIÓN <span class="sub-note">MANTA + TEM + AIRMANSHIP</span></div>
         <table class="cl-table">
-          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Introduccion de la tripulacion</td><td class="item-action">REALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Introducción de la tripulación</td><td class="item-action">REALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Equipo personal y profesional</td><td class="item-action">VERIFICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Autonomia, control psicofisico y ETTO continuado</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Resistencia de la tripulacion (descanso)</td><td class="item-action">EVALUAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Autonomía, control psicofísico y ETTO continuado</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Resistencia de la tripulación (descanso)</td><td class="item-action">EVALUAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Tarjeta de riesgo</td><td class="item-action">REVISAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Orden de vuelo</td><td class="item-action">VALIDAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">7</td><td class="item-name">Mision (seguridad - cumplimiento - servicio)</td><td class="item-action">ALINEAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">8</td><td class="item-name">Safe Start: prisa, frustracion, fatiga, complacencia</td><td class="item-action">CHEQUEAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="row-note"><td colspan="4">TEM y AIRMANSHIP son obligatorios en todos los briefings de tripulacion.</td></tr>
+          <tr class="row-note"><td colspan="4">TEM y AIRMANSHIP son obligatorios en todos los briefings de tripulación.</td></tr>
           <tr onclick="toggle(this)"><td class="item-num">9</td><td class="item-name">TEM: amenazas identificadas y gestionadas</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">10</td><td class="item-name">TEM: errores identificados y solucionados</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">11</td><td class="item-name">TEM: UAS/estados no deseados recuperados</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">12</td><td class="item-name">Regla de cabina: anunciar amenaza/error y actuar de inmediato</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">13</td><td class="item-name">FACDEE (Factor, Alternativa, Consecuencias, Decision, Ejecucion, Evaluacion)</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">14</td><td class="item-name">Airmanship: disciplina, habilidades, conocimiento y juicio</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">15</td><td class="item-name">Rutas, altitudes y MEA</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">16</td><td class="item-name">Tiempo estimado en ruta</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">17</td><td class="item-name">Reabastecimiento y combustible</td><td class="item-action">CHEQUEAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">18</td><td class="item-name">Pasajeros: abordaje y desabordaje</td><td class="item-action">COORDINAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">19</td><td class="item-name">Plan de vuelo</td><td class="item-action">REVISAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">20</td><td class="item-name">Meteorologia / engelamiento / ASHTAM</td><td class="item-action">REVISAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">20</td><td class="item-name">Meteorología / engelamiento / ASHTAM</td><td class="item-action">REVISAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">21</td><td class="item-name">NOTAMs / NANUs / P-RAIM</td><td class="item-action">VERIFICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">22</td><td class="item-name">Iluminacion y horarios operativos de aerodromos</td><td class="item-action">VERIFICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">23</td><td class="item-name">Aeronave: rendimiento, restricciones, equipo de emergencia y soporte tecnico</td><td class="item-action">CHEQUEAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">24</td><td class="item-name">Emergencias: contramedidas, salidas y responsabilidades PF/PM/Tecnico/PAX</td><td class="item-action">BRIEF</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">22</td><td class="item-name">Iluminación y horarios operativos de aeródromos</td><td class="item-action">VERIFICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">23</td><td class="item-name">Aeronave: rendimiento, restricciones, equipo de emergencia y soporte técnico</td><td class="item-action">CHEQUEAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">24</td><td class="item-name">Emergencias: contramedidas, salidas y responsabilidades PF/PM/Técnico/PAX</td><td class="item-action">BRIEF</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">25</td><td class="item-name">Golden Rules y regla de dos retos</td><td class="item-action">APLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="row-note"><td colspan="4">Tareas generales por rol durante ejecucion de la mision.</td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">26</td><td class="item-name">PF: volar aeronave, evitar trafico/obstaculos, verificar instrumentos y radios</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">27</td><td class="item-name">PM: anunciar trafico, monitoreo interno, avionica/MCDU y chequeo combustible</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">28</td><td class="item-name">Tecnico: asegurar pasajeros/carga y anunciar trafico/obstaculos</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">29</td><td class="item-name">Tecnico: otros deberes ordenados por PF/PM</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr class="row-note"><td colspan="4">Tareas generales por rol durante ejecución de la misión.</td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">26</td><td class="item-name">PF: volar aeronave, evitar tráfico/obstáculos, verificar instrumentos y radios</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">27</td><td class="item-name">PM: anunciar tráfico, monitoreo interno, aviónica/MCDU y chequeo combustible</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">28</td><td class="item-name">Técnico: asegurar pasajeros/carga y anunciar tráfico/obstáculos</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">29</td><td class="item-name">Técnico: otros deberes ordenados por PF/PM</td><td class="item-action">ASIGNAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">30</td><td class="item-name">Apoyo administrativo: tierra, servicio a bordo, parqueo y seguridad aeronave</td><td class="item-action">COORDINAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">31</td><td class="item-name">Apoyo administrativo: alojamiento, transporte y alimentacion</td><td class="item-action">COORDINAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">32</td><td class="item-name">Confirmacion final de orientacion de mision del PIC y la tripulacion</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">31</td><td class="item-name">Apoyo administrativo: alojamiento, transporte y alimentación</td><td class="item-action">COORDINAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">32</td><td class="item-name">Confirmación final de orientación de misión del PIC y la tripulación</td><td class="item-action">CONFIRMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
         </table>
       </div>
 
       </div>
       <div class="safety-brief-pane" id="safety-brief-pax" data-brief="pax">
       <div class="cl-section" data-section="safety">
-        <div class="cl-section-header">ORIENTACION A PASAJEROS <span class="sub-note">Full briefing y emergencia</span></div>
+        <div class="cl-section-header">ORIENTACIÓN A PASAJEROS <span class="sub-note">Full briefing y emergencia</span></div>
         <table class="cl-table">
-          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Presentacion de la tripulacion</td><td class="item-action">REALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Presentación de la tripulación</td><td class="item-action">REALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Datos de vuelo: rutas, altitud, tiempo en ruta y meteo</td><td class="item-action">INFORMAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Entrada/salida del helicoptero, asientos y cinturones</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Movimientos internos, comunicaciones, no fumar, proteccion oidos</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Oxigeno/mascara, seguridad de equipo y combustible</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Entrada/salida del helicóptero, asientos y cinturones</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Movimientos internos, comunicaciones, no fumar, protección de oídos</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Oxígeno/máscara, seguridad de equipo y combustible</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Equipo de supervivencia y salida de la aeronave</td><td class="item-action">EXPLICAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">7</td><td class="item-name">Emergencia: salidas, crash kit/chalecos/extintor, aterrizaje y amarizaje forzoso</td><td class="item-action">BRIEF</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr class="row-note"><td colspan="4">Si el tiempo o la mision no lo permite, dirigir al pasajero a la tarjeta de emergencia.</td></tr>
+          <tr class="row-note"><td colspan="4">Si el tiempo o la misión no lo permite, dirigir al pasajero a la tarjeta de emergencia.</td></tr>
         </table>
       </div>
 
@@ -2329,12 +2332,12 @@
         <div class="cl-section" data-section="safety">
         <div class="cl-section-header">DEBRIEFING <span class="sub-note">Cierre post-fase o post-vuelo</span></div>
         <table class="cl-table">
-          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Seguridad/UAS: se deterioraron margenes de seguridad?</td><td class="item-action">ANALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">1</td><td class="item-name">Seguridad/UAS: ¿se deterioraron márgenes de seguridad?</td><td class="item-action">ANALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">2</td><td class="item-name">Amenazas y errores: te preparamos? lo reparamos?</td><td class="item-action">ANALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Normas/SOP: hubo violaciones? por que?</td><td class="item-action">ANALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">3</td><td class="item-name">Normas/SOP: ¿hubo violaciones? ¿por qué?</td><td class="item-action">ANALIZAR</td><td class="check-col"><div class="check-box"></div></td></tr>
           <tr onclick="toggle(this)"><td class="item-num">4</td><td class="item-name">Preguntas sin respuesta o problemas no resueltos</td><td class="item-action">REGISTRAR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Oportunidades de mejora para el proximo vuelo</td><td class="item-action">DEFINIR</td><td class="check-col"><div class="check-box"></div></td></tr>
-          <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Cierre TEM + Airmanship aplicado durante la mision</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">5</td><td class="item-name">Oportunidades de mejora para el próximo vuelo</td><td class="item-action">DEFINIR</td><td class="check-col"><div class="check-box"></div></td></tr>
+          <tr onclick="toggle(this)"><td class="item-num">6</td><td class="item-name">Cierre TEM + Airmanship aplicado durante la misión</td><td class="item-action" style="color:var(--gold); font-weight:700;">MANDATORIO</td><td class="check-col"><div class="check-box"></div></td></tr>
         </table>
       </div>
 
@@ -2621,7 +2624,7 @@ const CONTENT_VERSION = VERSION_CFG.CONTENT_VERSION || 'unknown';
 const LAST_SEEN_VERSION_KEY = 'aw139-last-seen-version';
 const CHANGELOG_URL = VERSION_CFG.CHANGELOG_URL || './changelog.json';
 
-// Registro escalable de modulos de calculo por carta.
+// Registro escalable de módulos de cálculo por carta.
 // Para agregar otra carta: crear nuevo toolId con su src y altura.
 const CALC_TOOL_REGISTRY = {
   pac: {
@@ -2828,7 +2831,7 @@ async function maybeShowWhatsNew() {
   label.textContent = `APP v${APP_VERSION}  |  CONTENT ${CONTENT_VERSION}`;
   list.innerHTML = '';
 
-  const safeItems = items.length ? items : ['Actualizacion aplicada correctamente. Revisa los cambios operacionales y de UI.'];
+  const safeItems = items.length ? items : ['Actualización aplicada correctamente. Revisa los cambios operacionales y de UI.'];
   safeItems.forEach((item) => {
     const li = document.createElement('li');
     li.textContent = item;
@@ -2958,6 +2961,51 @@ function initOrganicLighting() {
   updatePremiumScrollDepth();
 }
 
+let pacOrientationLockRequested = false;
+
+function isPacPanelActive() {
+  const panel = document.getElementById('panel-pac');
+  return !!panel && panel.classList.contains('active');
+}
+
+function updatePacOrientationHint(isPacActive) {
+  const hint = document.getElementById('pac-orientation-hint');
+  if (!hint) return;
+  const portrait = window.matchMedia('(orientation: portrait)').matches;
+  hint.style.display = (isPacActive && portrait) ? 'block' : 'none';
+}
+
+function requestPacLandscapeOrientation() {
+  if (!window.screen || !screen.orientation || typeof screen.orientation.lock !== 'function') return;
+  screen.orientation.lock('landscape').then(() => {
+    pacOrientationLockRequested = true;
+  }).catch(() => {
+    pacOrientationLockRequested = false;
+  });
+}
+
+function releasePacLandscapeOrientation() {
+  if (!window.screen || !screen.orientation) return;
+  if (typeof screen.orientation.unlock === 'function' && pacOrientationLockRequested) {
+    try {
+      screen.orientation.unlock();
+    } catch (err) {
+      // Ignore unlock failures from browsers that do not expose it reliably.
+    }
+  }
+  pacOrientationLockRequested = false;
+}
+
+function syncPacDisplayContext(id) {
+  const isPac = id === 'pac';
+  updatePacOrientationHint(isPac);
+  if (isPac) {
+    requestPacLandscapeOrientation();
+    return;
+  }
+  releasePacLandscapeOrientation();
+}
+
 function show(id) {
   const panelEl = document.getElementById('panel-' + id);
   const btnEl = document.getElementById('btn-' + id);
@@ -2974,6 +3022,7 @@ function show(id) {
   animatePanelEntry(panelEl);
 
   if (id === 'pac') setTimeout(initCalcTools, 50);
+  syncPacDisplayContext(id);
   if (id === 'safety') {
     openSafetyBriefMenu();
   }
@@ -3984,6 +4033,21 @@ initViewportStability();
 initUIPrefs();
 initUIFloatingMenu();
 initOrganicLighting();
+updatePacOrientationHint(isPacPanelActive());
+
+window.addEventListener('resize', () => {
+  updatePacOrientationHint(isPacPanelActive());
+}, { passive: true });
+
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => updatePacOrientationHint(isPacPanelActive()), 80);
+}, { passive: true });
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    updatePacOrientationHint(isPacPanelActive());
+  }, { passive: true });
+}
 
 // Init progress
 Object.keys(labels).forEach(id => updateProgress(id));

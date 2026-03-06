@@ -1982,7 +1982,7 @@
         Motor de cálculo: ${safeCalcEngine}.
         <br/>
         Tolerancias: ITT ${safeTolItt}°C, NG${safeTolNg}%.
-        <br/>Semaforo visual: Verde dentro, Amarillo cerca del limite (±${safeTolItt}°C ITT / ±${safeTolNg}% NG), Rojo excedido.
+        <br/>Semáforo visual: Verde dentro, Amarillo cerca del límite (±${safeTolItt}°C ITT / ±${safeTolNg}% NG), Rojo excedido.
         ${r.concluyente ? '' : '<br/>Input fuera del rango de la carta o calibración incompleta; revisa manualmente.'}
       </small>
     `;
@@ -2493,26 +2493,17 @@
     return ok;
   };
 
-  // Stable export snapshot for PDF generation (fit + crop to chart bounds + downsample).
+  // Stable export snapshot for PDF generation.
+  // Renders full chart + overlay from image coordinates, independent of user zoom/pan.
   window.PAC_captureForPdf = (opts = {}) => {
-    const previousView = { scale: view.scale, tx: view.tx, ty: view.ty };
     try {
       if (!img?.complete || imageLoadError) return null;
-      if (!fitViewToImage()) return null;
-      draw();
-
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const sx = Math.max(0, Math.floor(view.tx * dpr));
-      const sy = Math.max(0, Math.floor(view.ty * dpr));
-      const sw = Math.max(1, Math.floor(img.width * view.scale * dpr));
-      const sh = Math.max(1, Math.floor(img.height * view.scale * dpr));
-
-      if (!sw || !sh) return null;
-
       const maxSide = Math.max(600, Number(opts.maxSide) || 2200);
-      const downsample = Math.min(1, maxSide / Math.max(sw, sh));
-      const tw = Math.max(1, Math.floor(sw * downsample));
-      const th = Math.max(1, Math.floor(sh * downsample));
+      const scale = Math.min(1, maxSide / Math.max(1, img.width, img.height));
+      const tw = Math.max(1, Math.floor(img.width * scale));
+      const th = Math.max(1, Math.floor(img.height * scale));
+      const sx = tw / img.width;
+      const sy = th / img.height;
 
       const out = document.createElement('canvas');
       out.width = tw;
@@ -2521,16 +2512,78 @@
       if (!outCtx) return null;
       outCtx.fillStyle = '#0b1324';
       outCtx.fillRect(0, 0, tw, th);
-      outCtx.drawImage(canvas, sx, sy, sw, sh, 0, 0, tw, th);
+      outCtx.drawImage(img, 0, 0, tw, th);
+
+      const rootStyle = getComputedStyle(document.documentElement);
+      const fallbackSegColor = rootStyle.getPropertyValue('--pac-overlay-primary').trim() || 'rgba(43,124,255,0.9)';
+      const fallbackPointFill = rootStyle.getPropertyValue('--pac-overlay-point-fill').trim() || 'rgba(255,255,255,0.95)';
+      const fallbackPointStroke = rootStyle.getPropertyValue('--pac-overlay-point-stroke').trim() || 'rgba(255,80,80,0.95)';
+      const fallbackTransfer = rootStyle.getPropertyValue('--pac-overlay-transfer').trim() || 'rgba(255,200,80,0.9)';
+      const fallbackLabelBg = rootStyle.getPropertyValue('--pac-label-bg').trim() || 'rgba(245,249,255,0.86)';
+      const fallbackLabelBorder = rootStyle.getPropertyValue('--pac-label-border').trim() || 'rgba(26,37,51,0.45)';
+      const fallbackLabelText = rootStyle.getPropertyValue('--pac-label-text').trim() || 'rgba(11,15,20,0.95)';
+
+      const drawLabel = (text, x, y) => {
+        if (!text) return;
+        const fontPx = Math.max(10, Math.floor(10 * Math.min(sx, sy) + 0.5));
+        outCtx.font = `600 ${fontPx}px "IBM Plex Mono", monospace`;
+        const padX = Math.max(4, Math.round(4 * sx));
+        const padY = Math.max(2, Math.round(2 * sy));
+        const textW = outCtx.measureText(text).width;
+        const boxW = textW + padX * 2;
+        const boxH = fontPx + padY * 2;
+        const rx = x + Math.max(4, Math.round(8 * sx));
+        const ry = y - boxH - Math.max(3, Math.round(5 * sy));
+        outCtx.fillStyle = fallbackLabelBg;
+        outCtx.strokeStyle = fallbackLabelBorder;
+        outCtx.lineWidth = 1;
+        outCtx.fillRect(rx, ry, boxW, boxH);
+        outCtx.strokeRect(rx, ry, boxW, boxH);
+        outCtx.fillStyle = fallbackLabelText;
+        outCtx.fillText(text, rx + padX, ry + boxH - padY);
+      };
+
+      const segments = Array.isArray(overlay?.segments) ? overlay.segments : [];
+      for (const seg of segments) {
+        if (!seg?.a || !seg?.b) continue;
+        const style = seg.style || {};
+        const ax = seg.a.x * sx;
+        const ay = seg.a.y * sy;
+        const bx = seg.b.x * sx;
+        const by = seg.b.y * sy;
+        outCtx.beginPath();
+        outCtx.moveTo(ax, ay);
+        outCtx.lineTo(bx, by);
+        outCtx.strokeStyle = style.color || (style.dash ? fallbackTransfer : fallbackSegColor);
+        outCtx.lineWidth = Math.max(1.2, (Number.isFinite(style.width) ? style.width : 2) * Math.min(sx, sy));
+        outCtx.setLineDash(Array.isArray(style.dash) ? style.dash.map((v) => v * Math.min(sx, sy)) : []);
+        outCtx.globalAlpha = Number.isFinite(style.alpha) ? style.alpha : 1;
+        outCtx.stroke();
+      }
+      outCtx.setLineDash([]);
+      outCtx.globalAlpha = 1;
+
+      const points = Array.isArray(overlay?.points) ? overlay.points : [];
+      for (const p of points) {
+        if (!Number.isFinite(p?.x) || !Number.isFinite(p?.y)) continue;
+        const x = p.x * sx;
+        const y = p.y * sy;
+        const radius = Math.max(2.8, (Number.isFinite(p.radius) ? p.radius : 5) * Math.min(sx, sy));
+        outCtx.beginPath();
+        outCtx.arc(x, y, radius, 0, Math.PI * 2);
+        outCtx.fillStyle = p.fill || fallbackPointFill;
+        outCtx.strokeStyle = p.color || fallbackPointStroke;
+        outCtx.lineWidth = Math.max(1.1, (Number.isFinite(p.width) ? p.width : 2) * Math.min(sx, sy));
+        outCtx.fill();
+        outCtx.stroke();
+        if (p.label) drawLabel(String(p.label), x, y);
+      }
 
       const dataUrl = out.toDataURL('image/jpeg', 0.9);
       if (!dataUrl || dataUrl.length < 200) return null;
       return { dataUrl, width: tw, height: th };
     } catch (err) {
       return null;
-    } finally {
-      view = previousView;
-      draw();
     }
   };
 
