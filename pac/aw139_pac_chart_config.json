@@ -3,10 +3,7 @@
   "image": "power_assurance_chart.png",
   "meta": {
     "legacyScaledForImage": "2000x1414",
-    "legacyScaleFactor": 0.79,
-    "ittAxisAutoFixed": "2026-03-03T21:48:20.127Z",
-    "ittAxisPreviousRange": "450-850",
-    "ittAxisCurrentRange": "500-800"
+    "legacyScaleFactor": 0.79
   },
   "panels": {
     "p1": {
@@ -57,12 +54,12 @@
         613.2772383274661,
         588.1853190452822
       ],
-      "v1": 450,
+      "v1": 400,
       "p2": [
         1209.4230960385144,
         588.2164840978339
       ],
-      "v2": 850
+      "v2": 900
     },
     "ng_x": {
       "panel": "ng",

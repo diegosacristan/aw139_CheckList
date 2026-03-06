@@ -384,29 +384,72 @@
     return true;
   }
 
-  // Corrige calibraciones históricas incorrectas del eje ITT (400..900 o 450..850 -> 500..800).
+  // Corrige calibraciones históricas del eje ITT:
+  // - 400..900 -> 450..850
+  // - 500..800 anclado a bordes de panel -> 450..850 (recupera fix previo agresivo)
   function maybeAutoFixIttAxisRange() {
+    /* 
+    // Comentado para corregir desplazamiento a la derecha en ITT 700.
+    // La Figura 4-5 real tiene un rango de 400-900, no 450-850.
     const itt = config?.axes?.itt_x;
     if (!itt || !Number.isFinite(itt.v1) || !Number.isFinite(itt.v2)) return false;
 
     const min = Math.min(itt.v1, itt.v2);
     const max = Math.max(itt.v1, itt.v2);
     let previousRange = null;
-    if (Math.abs(min - 400) < 1e-6 && Math.abs(max - 900) < 1e-6) previousRange = '400-900';
-    if (Math.abs(min - 450) < 1e-6 && Math.abs(max - 850) < 1e-6) previousRange = '450-850';
+    if (Math.abs(min - 400) < 1e-6 && Math.abs(max - 900) < 1e-6) {
+      previousRange = '400-900';
+    } else if (Math.abs(min - 500) < 1e-6 && Math.abs(max - 800) < 1e-6) {
+      const bbox = config?.panels?.itt?.bbox;
+      if (bbox && itt.p1 && itt.p2) {
+        const left = Math.min(bbox[0], bbox[2]);
+        const right = Math.max(bbox[0], bbox[2]);
+        const panelWidth = Math.max(1, right - left);
+        const axisMinX = Math.min(itt.p1[0], itt.p2[0]);
+        const axisMaxX = Math.max(itt.p1[0], itt.p2[0]);
+        const nearLeft = Math.abs(axisMinX - left) <= panelWidth * 0.08;
+        const nearRight = Math.abs(axisMaxX - right) <= panelWidth * 0.08;
+        if (nearLeft && nearRight) previousRange = '500-800-edge';
+      }
+    }
     if (!previousRange) return false;
 
     const ascending = itt.v2 >= itt.v1;
-    itt.v1 = ascending ? 500 : 800;
-    itt.v2 = ascending ? 800 : 500;
+    itt.v1 = ascending ? 450 : 850;
+    itt.v2 = ascending ? 850 : 450;
     config.meta = {
       ...(config.meta || {}),
       ittAxisAutoFixed: new Date().toISOString(),
       ittAxisPreviousRange: previousRange,
-      ittAxisCurrentRange: '500-800',
+      ittAxisCurrentRange: '450-850',
     };
     saveConfig();
     return true;
+    */
+    return false;
+  }
+
+  // Ejecuta autocorrecciones de calibración sin requerir recarga de la vista.
+  function enforceCalibrationConsistency(options = {}) {
+    const opts = {
+      allowScale: true,
+      announce: false,
+      ...options,
+    };
+    let changed = false;
+    let lastMessage = '';
+    if (maybeAutoFixIttAxisRange()) {
+      changed = true;
+      lastMessage = 'Calibracion ITT corregida automaticamente (eje 450-850°C).';
+    }
+    if (opts.allowScale && maybeAutoScaleLegacyConfigToImage()) {
+      changed = true;
+      lastMessage = 'Configuracion ajustada automaticamente a la resolucion de la carta.';
+    }
+    if (changed && opts.announce && lastMessage) {
+      hudText.textContent = lastMessage;
+    }
+    return changed;
   }
 
 
@@ -1129,6 +1172,7 @@
       }
       axis[target.valueKey] = v;
       saveConfig();
+      enforceCalibrationConsistency({ allowScale: false, announce: false });
       overlay.warnings = [];
       hudText.textContent = `Actualizado ${target.axisKey}.${target.valueKey} = ${v}`;
       draw();
@@ -1391,6 +1435,8 @@
 
   // ---------- computation ----------
   function computeAndOverlay() {
+    // Garantiza consistencia de ejes/calibración antes de mapear valores al chart.
+    enforceCalibrationConsistency({ allowScale: true, announce: false });
     // Oculta la decisión anterior al iniciar un nuevo cálculo.
     hideDecisionBanner();
     overlay = { points: [], segments: [], warnings: [], computed: null };
@@ -2158,6 +2204,7 @@
       const obj = JSON.parse(text);
       config = normalizeConfig(obj) || emptyConfig();
       saveConfig();
+      enforceCalibrationConsistency({ allowScale: true, announce: true });
       overlay.warnings = [];
       draw();
     } catch (err) {
@@ -2351,7 +2398,7 @@
       draw();
     }
     if (autoFixedIttNow) {
-      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 500-800°C).';
+      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 450-850°C).';
       refreshStatus();
       draw();
     }
@@ -2388,7 +2435,7 @@
       refreshStatus();
     }
     if (autoFixedItt) {
-      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 500-800°C).';
+      hudText.textContent = 'Calibracion ITT corregida automaticamente (eje 450-850°C).';
       refreshStatus();
     }
     draw();

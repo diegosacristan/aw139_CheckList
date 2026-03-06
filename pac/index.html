@@ -5,216 +5,24 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>AW139 Power Assurance Digital</title>
   <link rel="stylesheet" href="styles.css"/>
-  <style>
-    /* ── VISTA DE INPUTS ────────────────────────────────────── */
-    #inputView {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 24px 16px 40px;
-      box-sizing: border-box;
-      background: var(--bg);
-    }
-
-    #inputView.hidden { display: none; }
-
-    .input-card {
-      width: 100%;
-      max-width: 420px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 28px 24px 24px;
-    }
-
-    .input-card-header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-
-    .input-card-header .pac-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 26px;
-      letter-spacing: 3px;
-      color: var(--gold);
-      line-height: 1;
-    }
-
-    .input-card-header .pac-sub {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 11px;
-      letter-spacing: 2px;
-      color: var(--dim);
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-
-    .pac-squadron-badge {
-      display: inline-block;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 9px;
-      letter-spacing: 1.5px;
-      color: var(--dim);
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      padding: 2px 8px;
-      margin-top: 8px;
-      text-transform: uppercase;
-    }
-
-    .input-group {
-      margin-bottom: 14px;
-    }
-
-    .input-group label {
-      display: block;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--dim);
-      margin-bottom: 5px;
-    }
-
-    .input-group input,
-    .input-group select {
-      width: 100%;
-      box-sizing: border-box;
-      background: var(--pac-field-bg);
-      border: 1px solid var(--pac-field-border);
-      color: var(--pac-field-text);
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 20px;
-      padding: 10px 12px;
-      border-radius: 2px;
-      -webkit-appearance: none;
-      appearance: none;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-
-    .input-group input:focus,
-    .input-group select:focus {
-      border-color: var(--pac-primary);
-    }
-
-    .input-row-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .btn-compute-main {
-      width: 100%;
-      margin-top: 20px;
-      padding: 14px;
-      background: var(--pac-primary);
-      color: var(--pac-primary-text);
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 20px;
-      letter-spacing: 3px;
-      border: none;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-
-    .btn-compute-main:active {
-      opacity: 0.85;
-      transform: scale(0.98);
-    }
-
-    .input-divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 18px 0 14px;
-    }
-
-    /* ── VISTA DE GRÁFICA ───────────────────────────────────── */
-    #chartView { display: none; }
-    #chartView.active { display: block; }
-
-    /* ── TOOLBAR SOBRE LA GRÁFICA ───────────────────────────── */
-    #chartToolbar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 12px;
-      background: var(--header-bg);
-      border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
-    }
-
-    .toolbar-btn {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      padding: 6px 14px;
-      border-radius: 2px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      color: var(--dim);
-      cursor: pointer;
-      transition: background 0.12s, color 0.12s;
-      white-space: nowrap;
-    }
-
-    .toolbar-btn:hover { background: var(--row-hover); color: var(--text); }
-
-    .toolbar-btn.primary {
-      background: var(--pac-primary);
-      color: var(--pac-primary-text);
-      border-color: var(--pac-primary);
-    }
-
-    .toolbar-btn.export-btn {
-      background: transparent;
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-
-    .toolbar-btn.export-btn:hover {
-      background: rgba(200,160,60,0.12);
-    }
-
-    .toolbar-spacer { flex: 1; }
-
-    .toolbar-summary {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 11px;
-      color: var(--dim);
-      white-space: nowrap;
-    }
-
-    /* ── SPINNER DE EXPORTACIÓN ─────────────────────────────── */
-    #exportSpinner {
-      display: none;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 11px;
-      color: var(--gold);
-      animation: blink 0.8s step-start infinite;
-    }
-
-    @keyframes blink { 50% { opacity: 0; } }
-  </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════════
-     VISTA 1: INPUTS LIMPIA
-═══════════════════════════════════════════════════════════ -->
+
 <div id="inputView">
   <div class="input-card">
 
     <div class="input-card-header">
+      <div class="input-kicker">Flight Performance Utility</div>
       <div class="pac-title">Power Assurance Check</div>
-      <div class="pac-sub">AW139 · NR 100% · EAPS OFF</div>
-      <div class="pac-squadron-badge">FAC 0008 · Águila Uno</div>
+      <div class="pac-sub">AW139 | NR 100% | EAPS OFF</div>
+      <div class="pac-squadron-badge">FAC 0008 | Aguila Uno</div>
+    </div>
+
+    <div class="input-meta-grid">
+      <span class="meta-pill">Dual engine</span>
+      <span class="meta-pill">Calibrated chart</span>
+      <span class="meta-pill">Live decision</span>
     </div>
 
     <div class="input-group">
@@ -233,18 +41,18 @@
         <input id="tq" type="number" step="0.1" value="100" inputmode="decimal"/>
       </div>
       <div class="input-group">
-        <label>Presión Alt (ft)</label>
+        <label>Presion Alt (ft)</label>
         <input id="alt" type="number" step="10" value="7000" inputmode="numeric"/>
       </div>
     </div>
 
     <div class="input-row-2">
       <div class="input-group">
-        <label>ITT indicado (°C)</label>
+        <label>ITT indicado (C)</label>
         <input id="itt" type="number" step="1" value="700" inputmode="numeric"/>
       </div>
       <div class="input-group">
-        <label>OAT (°C)</label>
+        <label>OAT (C)</label>
         <input id="oat" type="number" step="1" value="10" inputmode="numeric"/>
       </div>
     </div>
@@ -255,29 +63,31 @@
     </div>
 
     <button class="btn-compute-main" id="btnCompute">
-      CALCULAR
+      Calcular y abrir carta
     </button>
+    <small class="input-note">Ingresa datos del chequeo PAC y valida limites ITT / NG en la carta.</small>
 
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     VISTA 2: GRÁFICA + RESULTADOS
-═══════════════════════════════════════════════════════════ -->
+
 <div id="chartView">
 
-  <!-- Toolbar -->
+  
   <div id="chartToolbar">
-    <button class="toolbar-btn" id="btnBack">← Nuevo cálculo</button>
-    <span class="toolbar-spacer"></span>
+    <div class="toolbar-group">
+      <button class="toolbar-btn" id="btnBack">Nuevo calculo</button>
+      <button class="toolbar-btn" id="btnResetView">Reset vista</button>
+    </div>
     <span class="toolbar-summary" id="toolbarSummary"></span>
-    <button class="toolbar-btn export-btn" id="btnExportPdf">↓ Exportar PDF</button>
-    <span id="exportSpinner">GENERANDO...</span>
-    <button class="toolbar-btn" id="btnResetView">Reset vista</button>
-    <button class="toolbar-btn" id="btnAdminToggle">Admin</button>
+    <div class="toolbar-group toolbar-actions">
+      <button class="toolbar-btn export-btn" id="btnExportPdf">Exportar PDF</button>
+      <span id="exportSpinner">Generando...</span>
+      <button class="toolbar-btn" id="btnAdminToggle">Admin</button>
+    </div>
   </div>
 
-  <!-- Layout original (sidebar + canvas) — se muestra en vista 2 -->
+  
   <main>
     <aside id="sidebar">
 
@@ -293,13 +103,13 @@
         <div class="row"><label>Nombre lectura</label>
           <input id="readingName" type="text" placeholder="Ej: ENG1_2026-03-03"/>
         </div>
-        <div class="row" style="gap:10px;justify-content:space-between">
+        <div class="row row-actions">
           <button id="btnSaveReading" class="secondary">Guardar</button>
         </div>
         <div class="row"><label>Guardadas</label>
           <select id="readingSelect"></select>
         </div>
-        <div class="row" style="gap:10px;justify-content:space-between">
+        <div class="row row-actions">
           <button id="btnLoadReading" class="secondary">Cargar</button>
           <button id="btnDeleteReading" class="danger">Borrar</button>
         </div>
@@ -307,11 +117,11 @@
       </div>
 
       <div class="card">
-        <h2>ADMIN / CALIBRACIÓN</h2>
+        <h2>ADMIN / CALIBRACION</h2>
         <div class="row"><label>Clave admin</label>
           <input id="adminKey" type="password" placeholder="Opcional"/>
         </div>
-        <div class="row" style="gap:10px;justify-content:space-between">
+        <div class="row row-actions">
           <button id="btnSetAdminKey" class="secondary">Guardar clave</button>
           <button id="btnClearAdminKey" class="secondary">Borrar clave</button>
         </div>
@@ -320,7 +130,7 @@
         </div>
         <div id="calPanel" style="display:none">
           <hr/>
-          <div class="row" style="gap:10px;justify-content:space-between">
+          <div class="row row-actions">
             <button id="btnClearCal" class="danger">Borrar config</button>
           </div>
           <div class="row"><label>Modo captura</label>
@@ -331,24 +141,24 @@
           <div class="row"><label>Valor</label>
             <input id="calValue" type="number" step="1" placeholder="Ej: 7000 o 10"/>
           </div>
-          <div class="row" style="gap:10px;justify-content:space-between">
+          <div class="row row-actions">
             <button id="btnNext" class="secondary">Siguiente</button>
             <button id="btnUndo" class="secondary">Deshacer</button>
           </div>
           <div class="row">
-            <button id="btnSaveLine" class="secondary">Guardar línea</button>
+            <button id="btnSaveLine" class="secondary">Guardar linea</button>
           </div>
           <small id="lineStatus"></small>
           <small id="calHelp"></small>
-          <small>Tip: calibra con zoom alto para precisión.</small>
+          <small>Tip: calibra con zoom alto para precision.</small>
           <hr/>
-          <div class="row" style="gap:10px;justify-content:space-between">
+          <div class="row row-actions">
             <button id="btnExport" class="secondary">Exportar JSON</button>
-            <label class="secondary" style="padding:7px 11px;border-radius:2px;cursor:pointer;border:1px solid var(--border);font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--dim)">
+            <label class="file-btn secondary">
               Importar JSON<input id="fileImport" type="file" accept="application/json" style="display:none"/>
             </label>
           </div>
-          <small>Recomendación: calibra con zoom alto para precisión.</small>
+          <small>Recomendacion: calibra con zoom alto para precision.</small>
         </div>
       </div>
 
@@ -356,7 +166,7 @@
         <h2>NOTAS</h2>
         <small>
           Esta herramienta replica la lectura de la carta de PAC.
-          Si el punto queda fuera del rango de la carta, la app marcará "no concluyente".
+          Si el punto queda fuera del rango de la carta, la app marcara "no concluyente".
         </small>
       </div>
 
@@ -367,8 +177,8 @@
       <canvas id="chartCanvas"></canvas>
       <div id="hud">
         <div><b>Ayuda</b></div>
-        <div id="hudText" style="margin-top:6px;color:var(--dim)">
-          Carga la carta (ya incluida) y calibra para habilitar cálculos.
+        <div id="hudText" class="hud-copy">
+          Carga la carta (ya incluida) y calibra para habilitar calculos.
         </div>
       </div>
       <button id="sidebarSheetToggle" class="sheet-toggle" type="button"
@@ -376,14 +186,12 @@
     </section>
   </main>
 
-  <!-- Elemento oculto para compatibilidad con statusText -->
+  
   <small id="statusText" style="display:none"></small>
 
-</div><!-- #chartView -->
+</div>
 
-<!-- ══════════════════════════════════════════════════════════
-     SCRIPTS
-═══════════════════════════════════════════════════════════ -->
+
 <script>
   window.CHART_IMAGE = "power_assurance_chart.png";
 </script>
@@ -392,9 +200,7 @@
 <script src="app.js"></script>
 
 <script>
-/* ── LÓGICA DE DOS VISTAS ────────────────────────────────────
-   Se ejecuta DESPUÉS de que app.js inicializa sus listeners.
-─────────────────────────────────────────────────────────────*/
+
 (function initDualView() {
 
   const inputView      = document.getElementById('inputView');
@@ -405,20 +211,13 @@
   const btnExportPdf   = document.getElementById('btnExportPdf');
   const exportSpinner  = document.getElementById('exportSpinner');
   const canvas         = document.getElementById('chartCanvas');
-
-  // ── FIX 1: Eliminar botón PAC MODULO PRUEBA ──────────────
-  // Buscar todos los botones del documento y ocultar el que
-  // apunta a la URL de prueba (404)
   document.querySelectorAll('a, button').forEach(el => {
     const txt = el.textContent.trim().toUpperCase();
     if (txt.includes('MODULO PRUEBA') || txt.includes('PAC MODULO')) {
       el.style.display = 'none';
     }
   });
-
-  // ── Transición INPUT → GRÁFICA ───────────────────────────
   btnCompute.addEventListener('click', () => {
-    // Doble RAF: primero app.js termina el cálculo, luego mostramos
     requestAnimationFrame(() => requestAnimationFrame(() => {
       showChartView();
     }));
@@ -428,46 +227,40 @@
     inputView.classList.add('hidden');
     chartView.classList.add('active');
     updateToolbarSummary();
-
-    // ── FIX 2: Fit correcto del canvas ──────────────────────
-    // El canvas estaba oculto cuando img.onload calculó el fit,
-    // por eso rect.width/height eran 0 y scale quedó en 1.
-    // Recalculamos el fit ahora que el canvas es visible.
     setTimeout(() => {
       fitCanvasToImage();
-    }, 50); // pequeño delay para que el layout se pinte
+    }, 50);
   }
 
   function fitCanvasToImage() {
-    // Acceder al objeto img interno de app.js no es directo,
-    // pero podemos simular el btn Reset Vista que ya hace el fit.
     const btnReset = document.getElementById('btnResetView');
     if (btnReset) btnReset.click();
   }
-
-  // ── Transición GRÁFICA → INPUT ───────────────────────────
   btnBack.addEventListener('click', () => {
     chartView.classList.remove('active');
     inputView.classList.remove('hidden');
   });
-
-  // ── Resumen en toolbar ────────────────────────────────────
   function updateToolbarSummary() {
     const tq  = document.getElementById('tq')?.value  || '-';
     const alt = document.getElementById('alt')?.value || '-';
     const oat = document.getElementById('oat')?.value || '-';
     const eng = document.getElementById('engine')?.value || '?';
     toolbarSummary.textContent =
-      'ENG ' + eng + ' | TQ ' + tq + '% | PA ' + alt + 'ft | OAT ' + oat + 'C';
+      'ENG ' + eng + ' | TQ ' + tq + '% | PA ' + alt + ' ft | OAT ' + oat + ' C';
   }
 
-  // ── Exportar PDF ─────────────────────────────────────────
+  ['engine', 'tq', 'alt', 'oat'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', updateToolbarSummary);
+    el.addEventListener('change', updateToolbarSummary);
+  });
+  updateToolbarSummary();
   btnExportPdf.addEventListener('click', () => {
     exportPdf();
   });
 
   function exportPdf() {
-    // Verificar jsPDF disponible — si no, cargarlo dinámicamente
     if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
       exportSpinner.style.display = 'inline';
       btnExportPdf.disabled = true;
@@ -477,7 +270,7 @@
       script.onerror = () => {
         exportSpinner.style.display = 'none';
         btnExportPdf.disabled = false;
-        alert('No se pudo cargar la librería de PDF. Verifica conexión.');
+        alert('No se pudo cargar la libreria de PDF. Verifica conexion.');
       };
       document.head.appendChild(script);
     } else {
@@ -488,8 +281,6 @@
   function doExport() {
     exportSpinner.style.display = 'inline';
     btnExportPdf.disabled = true;
-
-    // Pequeño delay para que el spinner sea visible
     setTimeout(() => {
       try {
         buildPdf();
@@ -506,21 +297,14 @@
   function buildPdf() {
     const jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
     if (!jsPDF) throw new Error('jsPDF no disponible');
-
-    // ── Sanitizador de strings ───────────────────────────────
     const s = (v) => String(v == null ? '' : v)
-      .replace(/[°·→←↑↓✓✗⚠]/g, '')
-      .replace(/[^\x20-\x7E]/g, '');
-
-    // ── Leer inputs ──────────────────────────────────────────
+            .replace(/[^\x20-\x7E]/g, '');
     const eng = String(document.getElementById('engine')?.value || '1');
     const tq  = parseFloat(document.getElementById('tq')?.value)  || 0;
     const itt = parseFloat(document.getElementById('itt')?.value) || 0;
     const ng  = parseFloat(document.getElementById('ng')?.value)  || 0;
     const oat = parseFloat(document.getElementById('oat')?.value) || 0;
     const alt = parseFloat(document.getElementById('alt')?.value) || 0;
-
-    // ── Calcular con motor v4 ────────────────────────────────
     let ittMax = null, ngMax = null, ittOk = null, ngOk = null;
     try {
       if (typeof calcPAC === 'function') {
@@ -535,12 +319,8 @@
     const f0 = (v) => (v == null) ? '---' : String(Math.round(Number(v)));
     const f1 = (v) => (v == null) ? '---' : Number(v).toFixed(1);
     const ts  = new Date().toISOString().replace('T', ' ').slice(0, 19);
-
-    // ── PDF A4 landscape para que la carta tenga más espacio ─
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const W = 297, H = 210, mg = 12;
-
-    // ── Colores ──────────────────────────────────────────────
     const DARK   = [15,  25,  45];
     const GOLD   = [180, 140, 40];
     const TEAL   = [26,  130, 118];
@@ -557,14 +337,8 @@
     const sc = (c) => pdf.setTextColor(c[0], c[1], c[2]);
     const fn = (st, sz) => { pdf.setFont('helvetica', st); pdf.setFontSize(sz); };
     const tx = (str, x, y, opt) => pdf.text(s(str), x, y, opt || {});
-
-    // ════════════════════════════════════════════════════════
-    // COLUMNA IZQUIERDA: encabezado + tabla datos (ancho ~100mm)
-    // ════════════════════════════════════════════════════════
     const colLeft = mg;
     const colLeftW = 100;
-
-    // ── Header ───────────────────────────────────────────────
     sf(DARK); pdf.rect(colLeft, mg, colLeftW, 14, 'F');
     sc(WHITE); fn('bold', 16);
     tx('AW139', colLeft + 3, mg + 9);
@@ -572,8 +346,6 @@
     tx('POWER ASSURANCE CHECK', colLeft + 3, mg + 13);
 
     sf(GOLD); pdf.rect(colLeft, mg + 14, colLeftW, 0.8, 'F');
-
-    // ── Bloque info vuelo ────────────────────────────────────
     let y = mg + 18;
     sf(LGRAY); pdf.rect(colLeft, y, colLeftW, 12, 'F');
     ss(BORDER); pdf.setLineWidth(0.2); pdf.rect(colLeft, y, colLeftW, 12, 'S');
@@ -587,11 +359,7 @@
     tx('TIMESTAMP', colLeft + colLeftW/2 + 2, y + 4);
     fn('bold', 7.5); sc(DARK);
     tx(ts, colLeft + colLeftW/2 + 2, y + 9.5);
-
-    // ── Tabla de resultados ──────────────────────────────────
     y += 16;
-
-    // Función helper para una fila de la tabla
     const row = (label, valTxt, valColor, rowY) => {
       sf(LGRAY); pdf.rect(colLeft, rowY, colLeftW, 10, 'F');
       ss(BORDER); pdf.setLineWidth(0.2); pdf.rect(colLeft, rowY, colLeftW, 10, 'S');
@@ -601,8 +369,6 @@
       tx(valTxt, colLeft + colLeftW - 3, rowY + 7.5, { align: 'right' });
       return rowY + 11;
     };
-
-    // Cabecera tabla
     sf(DARK); pdf.rect(colLeft, y, colLeftW, 8, 'F');
     fn('bold', 7); sc(WHITE);
     tx('ENG #' + eng + '  |  OAT: ' + oat + ' C  |  PA: ' + alt + ' ft', colLeft + 3, y + 5.5);
@@ -622,8 +388,6 @@
     y = row('MARGEN NG (%)',
       ngMax == null ? '---' : (ngMax - ng >= 0 ? '+' : '') + (ngMax - ng).toFixed(2) + ' %',
       ngMax == null ? DGRAY : (ngMax - ng >= -0.2 ? OK : BAD), y);
-
-    // ── Banner de decisión ────────────────────────────────────
     y += 4;
     let bColor = WARN, bText = 'NO CONCLUYENTE';
     if (ittOk != null && ngOk != null) {
@@ -633,18 +397,12 @@
     sf(bColor); pdf.rect(colLeft, y, colLeftW, 11, 'F');
     fn('bold', 11); sc(WHITE);
     tx(bText, colLeft + colLeftW/2, y + 7.5, { align: 'center' });
-
-    // ── Nota de configuración ─────────────────────────────────
     y += 14;
     sf([245, 248, 252]); pdf.rect(colLeft, y, colLeftW, 10, 'F');
     ss(BORDER); pdf.rect(colLeft, y, colLeftW, 10, 'S');
     fn('normal', 6); sc(DGRAY);
     tx('CONFIGURACION: NR 100%  EAPS OFF', colLeft + 3, y + 4.5);
     tx('REF: Figure 4-5 PWC PT6C-67C Hover Power Chart', colLeft + 3, y + 8.5);
-
-    // ════════════════════════════════════════════════════════
-    // COLUMNA DERECHA: gráfica del canvas
-    // ════════════════════════════════════════════════════════
     const colRight  = colLeft + colLeftW + 5;
     const colRightW = W - colRight - mg;
     const colRightH = H - mg * 2;
@@ -652,18 +410,14 @@
     fn('bold', 7); sc(DGRAY);
     tx('GRAPH OVERLAY', colRight, mg + 5);
     sf(TEAL); pdf.rect(colRight, mg + 6, 20, 0.6, 'F');
-
-    // Captura del canvas con manejo de error cross-origin
     try {
-      // Forzar que el canvas sea legible (mismo origen que la imagen)
       const imgData = canvas.toDataURL('image/jpeg', 0.88);
       if (imgData && imgData.length > 100) {
         pdf.addImage(imgData, 'JPEG', colRight, mg + 8, colRightW, colRightH - 8);
       } else {
-        throw new Error('canvas vacío');
+        throw new Error('canvas vacio');
       }
     } catch(e) {
-      // Fallback: recuadro con mensaje
       sf([240, 244, 252]); pdf.rect(colRight, mg + 8, colRightW, colRightH - 8, 'F');
       fn('italic', 9); sc(DGRAY);
       tx('Grafica no disponible en este dispositivo.', colRight + colRightW/2, mg + colRightH/2, { align: 'center' });
@@ -671,14 +425,10 @@
     }
     ss(BORDER); pdf.setLineWidth(0.4);
     pdf.rect(colRight, mg + 8, colRightW, colRightH - 8, 'S');
-
-    // ── Footer ────────────────────────────────────────────────
     fn('normal', 6); sc(DGRAY);
     tx('139G1580A001 ISSUE B', colLeft, H - 5);
     tx('Generated by AW139 QRH Digital - FAC 0008 Aguila Uno', W/2, H - 5, { align: 'center' });
     tx('ICN-39-A-155000-A-A0126-05003-A-04-1', W - mg, H - 5, { align: 'right' });
-
-    // ── Guardar ───────────────────────────────────────────────
     pdf.save('PAC_ENG' + eng + '_' + ts.replace(/[: ]/g, '-') + '.pdf');
   }
 
